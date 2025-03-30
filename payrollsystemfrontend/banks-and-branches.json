@@ -1,0 +1,53 @@
+[
+    {
+      "name": "Bank of Ceylon",
+      "branches": [
+        "Colombo Fort",
+        "Kandy",
+        "Galle",
+        "Kurunegala",
+        "Matara"
+      ]
+    },
+    {
+      "name": "People's Bank",
+      "branches": [
+        "Colombo",
+        "Nugegoda",
+        "Negombo",
+        "Anuradhapura",
+        "Batticaloa"
+      ]
+    },
+    {
+      "name": "Sampath Bank",
+      "branches": [
+        "Bambalapitiya",
+        "Wattala",
+        "Panadura",
+        "Jaffna",
+        "Ratnapura"
+      ]
+    },
+    {
+      "name": "Commercial Bank",
+      "branches": [
+        "Colombo 07",
+        "Maharagama",
+        "Dehiwala",
+        "Kalutara",
+        "Vavuniya"
+      ]
+    },
+    {
+      "name": "Hatton National Bank",
+      "branches": [
+        "Nawala",
+        "Pettah",
+        "Moratuwa",
+        "Kegalle",
+        "Badulla"
+      ]
+    }
+  ]
+  
