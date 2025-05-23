@@ -120,13 +120,13 @@ JsBarcode(barcodeRef.current, userData.FindUser.barcode, {
             {/* Name & Role */}
             <div style={{ width: "100%", textAlign: "left" }}>
               <h4 style={{ margin: "10px 0" }}>
-                <strong>User Name:</strong> {userData.FindUser.userName}
+                <strong>Employee Name:</strong> {userData.FindUser.userName}
               </h4>
               <h4 style={{ margin: "10px 0" }}>
-                <strong>Role:</strong> {userData.FindUser.role}
+                <strong>Employee Role:</strong> {userData.FindUser.role}
               </h4>
               <h4 style={{ margin: "10px 0" }}>
-                <strong>Emp ID:</strong> {userData.FindUser._id}
+                <strong>Emp ID:</strong> EMP {userData.FindUser.CorrectuserId}
               </h4>
             </div>
 

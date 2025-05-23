@@ -8,8 +8,8 @@ const register=async(req,res)=>{
     const id = `EMP-${Date.now().toString(36)}`;
     const randomEAN = Math.floor(100000000000 + Math.random() * 900000000000).toString();
     
-     const{userName,password,role,name,telephone,email,basicSal,nic}=req.body;
-     const newUser=new User({name,userName,password,role,barcode:randomEAN,telephone,email,basicSal,nic:nic});
+     const{userName,password,role,name,telephone,email,basicSal,nic,CorrectuserId}=req.body;
+     const newUser=new User({name,userName,password,role,barcode:randomEAN,telephone,email,basicSal,nic:nic,CorrectuserId});
      await newUser.save();
      res.status(201).json({message:'User registered successfully',newUser});
 

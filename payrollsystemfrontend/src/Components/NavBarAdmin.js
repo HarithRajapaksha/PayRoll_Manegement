@@ -52,10 +52,10 @@ function NavBar() {
                 <li><a className="dropdown-item" href="/LeaveNotAproved">Non Aproved Leave</a></li>
                 <li><a className="dropdown-item" href="/HalfDayComparision">Aprooved Half Day</a></li>
                 <li><a className="dropdown-item" href="/NotApprovedHalfDayComparision">Non Aproved Half Day</a></li>
-                <li><a className="dropdown-item" href="">Advance Report</a></li>
+                <li><a className="dropdown-item" href="#">Advance Report</a></li>
                 <li><a className="dropdown-item" href="#">EPF report</a></li>
                 <li><a className="dropdown-item" href="#">ETF report</a></li>
-                <li><a className="dropdown-item" href="/AdminAllUsersSalData">Overall paysheet</a></li>
+                <li><a className="dropdown-item" href="/AdminAllUsersSalData">Monthly payslips</a></li>
 
               </ul>
             </li>

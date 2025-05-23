@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { use, useState ,useEffect} from 'react';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Container from 'react-bootstrap/Container';
@@ -19,6 +19,8 @@ function BasicExample() {
   const [basicSal, setBasicSal] = useState('');
   const [image, setImage] = useState(null);
   const [nic, setNic] = useState('');
+  const [userAId, setUserId] = useState('');
+  const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
   // ✅ Validate Email Format
@@ -50,6 +52,49 @@ function BasicExample() {
     }
   };
 
+  useEffect(() => {
+    // Fetch the last user ID when the component mounts
+    const fetchUserId = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3006/api/users/getAllUserIdData`,{
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          });
+        const userList = response.data;
+      if (Array.isArray(userList) && userList.length > 0) {
+        const userAId = userList[0].userId; // Access userId from the first item
+        console.log("User ID:", userAId);
+        setUserId(userAId);
+      } else {
+        console.log("No user data found.");
+      }
+      } catch (error) {
+        console.error("Error fetching user ID", error.response ? error.response.data : error.message);
+      }
+    };
+
+    fetchUserId();
+  }, []);
+
+
+  //Update the newId 
+  const updateUserId = async (newId) => {
+    try {
+      const response = await axios.put(`http://localhost:3006/api/users/ChangeUserIdData`, { userId: newId }, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log("User ID updated successfully", response.data);
+    } catch (error) {
+      console.error("Error updating user ID", error.response ? error.response.data : error.message);
+    }
+  }
+
+ 
   // ✅ Submit Form Data
   const Registration = async (e) => {
     e.preventDefault();
@@ -84,7 +129,12 @@ function BasicExample() {
       return;
     }
 
-    const userData = { name, userName, password, role, telephone, email, basicSal, nic };
+    const nextIdNum = parseInt(userAId, 10) + 1;
+
+        // Pad with leading zeros if needed (e.g., 001, 002, etc.)
+    const nextIdStr = String(nextIdNum).padStart(3, '0');
+
+    const userData = { name, userName, password, role, telephone, email, basicSal, nic,CorrectuserId:nextIdStr };
 
     try {
       const response = await axios.post(`http://localhost:3006/api/auth/register`, userData);
@@ -92,6 +142,8 @@ function BasicExample() {
 
       const userId = response.data.newUser._id;
       console.log("User ID:", userId);
+
+       updateUserId(userAId + 1);
 
       Swal.fire({ title: "Success!", text: "Employee Registration successful!", icon: "success" })
         .then(() => navigate(`/UserId/${userId}`));

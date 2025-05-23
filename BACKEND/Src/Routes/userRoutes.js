@@ -11,6 +11,7 @@ const HalfDay=require('../Model/HalfDayModel');
 const Allowance=require('../Model/Allowancemodel');
 const Payments=require('../Model/PaymentsModel');
 const allowance = require('../Model/Allowancemodel');
+const LastEmp=require("../Model/LastEmpSavemodel")
 
 
 
@@ -1448,6 +1449,38 @@ router.get('/AllRegUsersData', verifyToken, authorizeRoles('Admin', 'Manager', '
     }
 
     res.status(200).json({ users });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+//add userId data
+router.put('/ChangeUserIdData', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'), async (req, res) => {
+  const {userId} = req.body;
+  const Id="681fa18a3b053da7b0c34bff"
+  try {
+    const idData=await LastEmp.findByIdAndUpdate(Id,{userId},{new:true});
+    res.status(201).json({ message: 'User data added successfully', idData});
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+
+//get all userId data
+router.get('/getAllUserIdData', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'), async (req, res) => {
+  try {
+    const userIdData = await LastEmp.find({});
+
+    if (userIdData.length === 0) {
+      return res.status(404).json({ message: 'No user ID data found' });
+    }
+
+    res.status(200).json( userIdData);
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: 'Internal Server Error' });
