@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"; // Ensure the Router is used
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Login from './Components/Login';
 import EmployeeRegister from './Components/EmployeeRegister';
@@ -22,28 +22,33 @@ import AllUsersSallaryHandle from "./Components/AllUsersSallaryHandle";
 import NavigationBar from "./Components/NavBarAdmin.js";
 import NavBarUsers from "./Components/NavBarUsers.js";
 import NavBarAdmin from "./Components/NavBarAdmin.js";
-import AllUsersSalData from "./Components/GetTheAllUsersSalData.js"
+import AllUsersSalData from "./Components/GetTheAllUsersSalData.js";
 import AdminAllUsersSalData from "./Components/AdminGetAllUsersPaySlips.js";
-import EmployeeSalAndRoleHandle from "./Components/EmployeeSalAndRoleHandle.js";
-
-
 
 import { jwtDecode } from "jwt-decode";
 
-// Custom component to check location and decide which navbar to show
+// Navbar component that shows the correct navbar based on login status and user role
 function AppNavbar() {
-  const location = useLocation();  // useLocation can be used here now
-
-  // Check if the current path is "/login"
+  const location = useLocation();
   const isLoginPage = location.pathname === '/';
 
   const token = localStorage.getItem('token');
-  const userRole = jwtDecode(token);  // 'admin' or 'user'
-  console.log('User Role:', userRole.role);
+  let userRole = null;
+
+  try {
+    if (token) {
+      userRole = jwtDecode(token);
+      console.log('User Role:', userRole.role);
+    }
+  } catch (error) {
+    console.error('Invalid token:', error);
+  }
 
   return (
     <>
-      {!isLoginPage && ((userRole.role ==='Admin')? <NavBarAdmin /> : <NavBarUsers />)}
+      {!isLoginPage && userRole && (
+        userRole.role === 'Admin' ? <NavBarAdmin /> : <NavBarUsers />
+      )}
     </>
   );
 }
@@ -51,8 +56,7 @@ function AppNavbar() {
 function App() {
   return (
     <Router>
-      <AppNavbar /> {/* This will handle rendering the navbar */}
-      
+      <AppNavbar />
       <Routes>
         <Route exact path="/" element={<Login />} />
         <Route path="EmpRegister/" element={<EmployeeRegister />} />
@@ -76,7 +80,6 @@ function App() {
         <Route path="/NavBar" element={<NavigationBar />} />
         <Route path="/AllUsersSalData" element={<AllUsersSalData />} />
         <Route path="/AdminAllUsersSalData" element={<AdminAllUsersSalData />} />
-        <Route path="/EditeRoleAndSal" element={<EmployeeSalAndRoleHandle/>}/>
       </Routes>
     </Router>
   );
