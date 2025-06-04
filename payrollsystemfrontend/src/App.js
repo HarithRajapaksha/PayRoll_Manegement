@@ -24,6 +24,7 @@ import NavBarUsers from "./Components/NavBarUsers.js";
 import NavBarAdmin from "./Components/NavBarAdmin.js";
 import AllUsersSalData from "./Components/GetTheAllUsersSalData.js";
 import AdminAllUsersSalData from "./Components/AdminGetAllUsersPaySlips.js";
+import UserManagement from "./Components/UserManagement.js";
 
 import { jwtDecode } from "jwt-decode";
 
@@ -80,6 +81,7 @@ function App() {
         <Route path="/NavBar" element={<NavigationBar />} />
         <Route path="/AllUsersSalData" element={<AllUsersSalData />} />
         <Route path="/AdminAllUsersSalData" element={<AdminAllUsersSalData />} />
+        <Route path="/UserManagement" element={<UserManagement />} />
       </Routes>
     </Router>
   );

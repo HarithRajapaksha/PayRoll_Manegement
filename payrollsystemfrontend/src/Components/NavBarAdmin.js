@@ -39,7 +39,7 @@ function NavBar() {
               <a className="nav-link text-white fw-semibold" href="/AdvancePayment">💸 Advance Payment</a>
             </li>
             <li className="nav-item">
-              <a className="nav-link text-white fw-semibold" href="/EditeRoleAndSal">🛠 Edit Details</a>
+              <a className="nav-link text-white fw-semibold" href="/UserManagement">🛠 Edit Details</a>
             </li>
             <li className="nav-item">
               <a className="nav-link text-white fw-semibold" href="/HalfDayRequests">🕒 Half Day</a>
