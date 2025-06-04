@@ -21,6 +21,7 @@ function BasicExample() {
   const [nic, setNic] = useState('');
   const [userAId, setUserId] = useState('');
   const token = localStorage.getItem('token');
+  console.log(token);
   const navigate = useNavigate();
 
   // ✅ Validate Email Format
@@ -143,7 +144,7 @@ function BasicExample() {
       const userId = response.data.newUser._id;
       console.log("User ID:", userId);
 
-       updateUserId(userAId + 1);
+       updateUserId(nextIdStr);
 
       Swal.fire({ title: "Success!", text: "Employee Registration successful!", icon: "success" })
         .then(() => navigate(`/UserId/${userId}`));

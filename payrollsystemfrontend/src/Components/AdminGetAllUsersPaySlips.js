@@ -78,19 +78,19 @@ function AdminSalaryViewer() {
 
   return (
     <Container className="mt-5">
-      <h3 className="text-center mb-4">Admin Salary Payment Viewer</h3>
+      <h3 className="text-center mb-4">Employee Payslip Viewer</h3>
 
       {/* Selection Form */}
       <Form onSubmit={handleSubmit} className="mb-4">
         <Row className="align-items-end g-3">
           <Col md={4}>
             <Form.Group controlId="userSelect">
-              <Form.Label>Select User</Form.Label>
+              <Form.Label>Select Employee</Form.Label>
               <Form.Select
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
               >
-                <option value="">-- Select User --</option>
+                <option value="">-- Select Employee --</option>
                 {users.map((user) => (
                   <option key={user._id} value={user._id}>
                     {user.name} ({user.role})

@@ -24,6 +24,7 @@ import NavBarUsers from "./Components/NavBarUsers.js";
 import NavBarAdmin from "./Components/NavBarAdmin.js";
 import AllUsersSalData from "./Components/GetTheAllUsersSalData.js"
 import AdminAllUsersSalData from "./Components/AdminGetAllUsersPaySlips.js";
+import EmployeeSalAndRoleHandle from "./Components/EmployeeSalAndRoleHandle.js";
 
 
 
@@ -75,6 +76,7 @@ function App() {
         <Route path="/NavBar" element={<NavigationBar />} />
         <Route path="/AllUsersSalData" element={<AllUsersSalData />} />
         <Route path="/AdminAllUsersSalData" element={<AdminAllUsersSalData />} />
+        <Route path="/EditeRoleAndSal" element={<EmployeeSalAndRoleHandle/>}/>
       </Routes>
     </Router>
   );

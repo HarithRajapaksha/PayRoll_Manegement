@@ -21,6 +21,7 @@ function AllUsersSallaryHandle() {
           },
         });
         setAllData(response.data.FindUser);
+        console.log(response.data.FindUser);
       } catch (error) {
         console.error('Error fetching all users data:', error);
       }
@@ -136,7 +137,7 @@ function AllUsersSallaryHandle() {
             {Array.isArray(allData) && allData.length > 0 ? (
               allData.map((item) => (
                 <tr key={item._id}>
-                  <td>{item._id}</td>
+                  <td>{item.CorrectuserId}</td>
                   <td>{item.name}</td>
                   <td>{item.basicSal}</td>
 
