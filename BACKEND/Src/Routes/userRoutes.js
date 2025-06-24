@@ -15,21 +15,20 @@ const LastEmp=require("../Model/LastEmpSavemodel")
 
 
 
-//Only admin can access this route
-router.get('/admin/:userId',verifyToken,authorizeRoles('Admin','Maneger', 'Headchef','Subchef','Supervisior','Waiter','Helper','Admin'),async(req,res)=>{
-
-        const userId=req.params.userId;
-        console.log("User Id is : ",userId);
-       try {
-        const FindUser= await User.findById(userId).lean();
-        res.status(200).json({message:'User found',FindUser});
-        console.log("User finded ",FindUser);
-       } catch (error) {
-         res.status(500).json({message:'User not found'});
-         console.log("Error is : ",error);
-       }
-    
+router.get('/admin/:userId', verifyToken, authorizeRoles( 'Admin', 'Maneger', 'Headchef', 'Subchef', 'Supervisior', 'Waiter', 'Helper'), async (req, res) => {
+  const userId = req.params.userId;
+  console.log("User Id is : ", userId);
+  try {
+    const FindUser = await User.findOne({ userName: userId }).lean();
+    if (!FindUser) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json({ message: 'User found', FindUser });
+    console.log("User found: ", FindUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Error finding user' });
+    console.log("Error is : ", error);
+  }
 });
+
 
 //Only manager can access this route
 router.get('/manager',verifyToken,authorizeRoles('maneger'),(req,res)=>{

@@ -1,235 +1,279 @@
-import React, { use, useState ,useEffect} from 'react';
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { Form, Button, Container, Row, Col } from 'react-bootstrap';
 import Swal from 'sweetalert2';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+const bankList = {
+  "Sampath Bank": ["Colombo", "Kandy", "Galle"],
+  "People's Bank": ["Colombo", "Jaffna", "Matara"],
+  "Commercial Bank": ["Colombo", "Kurunegala", "Trincomalee"],
+  "HSBC": ["Colombo", "Nugegoda", "Negombo"]
+};
+
 function BasicExample() {
-  const [imagePreview, setImagePreview] = useState(null);
-  const [name, setName] = useState('');
-  const [userName, setUserName] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('');
-  const [telephone, setTelephone] = useState('');
-  const [email, setEmail] = useState('');
-  const [basicSal, setBasicSal] = useState('');
+  const [formData, setFormData] = useState({
+    name: '', nic: '', dob: '', age: '',
+    address: '', gender: '', maritalStatus: '',
+    telephone: '', email: '', basicSal: '',
+    role: '', userName: '', password: '',
+    dateOfJoin: '', empType: '', bankName: '',
+    bankBranch: '', accountNo: ''
+  });
   const [image, setImage] = useState(null);
-  const [nic, setNic] = useState('');
+  const [imagePreview, setImagePreview] = useState(null);
   const [userAId, setUserId] = useState('');
-  const token = localStorage.getItem('token');
-  console.log(token);
+  const [validated, setValidated] = useState(false);
   const navigate = useNavigate();
-
-  // ✅ Validate Email Format
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  // ✅ Validate Sri Lankan Phone Number (10 Digits)
-  const validatePhone = (phone) => /^[0-9]{10}$/.test(phone);
-
-  // ✅ Validate Password (Minimum 6 Characters)
-  const validatePassword = (password) => password.length >= 6;
-
-  // ✅ Validate Sri Lankan NIC Number
-  const validateNIC = (nic) => {
-    return /^(\d{9}[VX]|\d{12})$/.test(nic);
-  };
-
-  // ✅ Handle Image Selection and Preview
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        Swal.fire({ icon: 'error', title: 'Invalid File', text: 'Please select an image file!' });
-        return;
-      }
-      setImage(file);
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
-    // Fetch the last user ID when the component mounts
-    const fetchUserId = async () => {
-      try {
-        const response = await axios.get(`http://localhost:3006/api/users/getAllUserIdData`,{
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          });
-        const userList = response.data;
-      if (Array.isArray(userList) && userList.length > 0) {
-        const userAId = userList[0].userId; // Access userId from the first item
-        console.log("User ID:", userAId);
-        setUserId(userAId);
-      } else {
-        console.log("No user data found.");
-      }
-      } catch (error) {
-        console.error("Error fetching user ID", error.response ? error.response.data : error.message);
-      }
-    };
-
-    fetchUserId();
+    axios.get('http://localhost:3006/api/users/getAllUserIdData', {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      const u = res.data[0]?.userId;
+      if (u) setUserId(u);
+    }).catch(console.error);
   }, []);
 
-
-  //Update the newId 
-  const updateUserId = async (newId) => {
-    try {
-      const response = await axios.put(`http://localhost:3006/api/users/ChangeUserIdData`, { userId: newId }, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log("User ID updated successfully", response.data);
-    } catch (error) {
-      console.error("Error updating user ID", error.response ? error.response.data : error.message);
+  useEffect(() => {
+    const { nic } = formData;
+    if (/^\d{9}[vVxX]$|^\d{12}$/.test(nic)) {
+      let year = nic.length === 10 ? '19' + nic.slice(0, 2) : nic.slice(0, 4);
+      let day = parseInt(nic.length === 10 ? nic.slice(2, 5) : nic.slice(4, 7));
+      if (day > 500) day -= 500;
+      const dob = new Date(`${year}-01-01`);
+      dob.setDate(day);
+      const age = new Date().getFullYear() - dob.getFullYear();
+      setFormData(d => ({
+        ...d,
+        dob: dob.toISOString().split('T')[0],
+        age
+      }));
     }
-  }
+  }, [formData.nic]);
 
- 
-  // ✅ Submit Form Data
-  const Registration = async (e) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(d => ({ ...d, [name]: value, ...(name === 'bankName' ? { bankBranch: '' } : {}) }));
+  };
+
+  const handleImage = (e) => {
+    const f = e.target.files[0];
+    if (f && f.type.startsWith('image/')) {
+      setImage(f);
+      const reader = new FileReader();
+      reader.onload = () => setImagePreview(reader.result);
+      reader.readAsDataURL(f);
+    } else {
+      setImage(null);
+      setImagePreview(null);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const form = e.currentTarget;
+    setValidated(true);
 
-    if (!name || !userName || !password || !role || !telephone || !email || !basicSal || !image || !nic) {
-      Swal.fire({ icon: 'error', title: 'Missing Fields', text: 'Please fill out all fields!' });
+    if (form.checkValidity() === false || !image) {
       return;
     }
 
-    if (!validateNIC(nic)) {
-      Swal.fire({ icon: 'error', title: 'Invalid NIC', text: 'Enter a valid Sri Lankan NIC number (9-digit or 12-digit).' });
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Enter a valid email address!' });
-      return;
-    }
-
-    if (!validatePhone(telephone)) {
-      Swal.fire({ icon: 'error', title: 'Invalid Phone Number', text: 'Phone number must be 10 digits!' });
-      return;
-    }
-
-    if (isNaN(basicSal) || Number(basicSal) <= 0) {
-      Swal.fire({ icon: 'error', title: 'Invalid Salary', text: 'Basic salary must be a positive number!' });
-      return;
-    }
-
-    if (!validatePassword(password)) {
-      Swal.fire({ icon: 'error', title: 'Weak Password', text: 'Password must be at least 6 characters long!' });
-      return;
-    }
-
-    const nextIdNum = parseInt(userAId, 10) + 1;
-
-        // Pad with leading zeros if needed (e.g., 001, 002, etc.)
-    const nextIdStr = String(nextIdNum).padStart(3, '0');
-
-    const userData = { name, userName, password, role, telephone, email, basicSal, nic,CorrectuserId:nextIdStr };
+    const data = {
+      ...formData,
+      CorrectuserId: String(parseInt(userAId || '0') + 1).padStart(3, '0')
+    };
 
     try {
-      const response = await axios.post(`http://localhost:3006/api/auth/register`, userData);
-      console.log("Registration Success", response.data);
-
-      const userId = response.data.newUser._id;
-      console.log("User ID:", userId);
-
-       updateUserId(nextIdStr);
-
-      Swal.fire({ title: "Success!", text: "Employee Registration successful!", icon: "success" })
-        .then(() => navigate(`/UserId/${userId}`));
-    } catch (error) {
-      console.error("Registration Error", error.response ? error.response.data : error.message);
+      await axios.post('http://localhost:3006/api/auth/register', data);
+      await axios.put('http://localhost:3006/api/users/ChangeUserIdData', {
+        userId: data.CorrectuserId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      Swal.fire('Success!', 'Employee registered successfully', 'success').then(() =>
+        navigate(`/UserId/${data.userName}`)
+      );
+    } catch (err) {
+      Swal.fire('Error', err.response?.data?.message || 'Registration failed', 'error');
     }
   };
 
   return (
-    <div>
-      <Container fluid style={{ height: '120vh' }}>
-        <Row className="h-100">
-          <Col md={4} sm={8} xs={10} className="mx-auto my-auto d-flex flex-column align-items-center justify-content-center">
-            <Form className="w-100 shadow-lg p-4 rounded bg-light" onSubmit={Registration}>
-              <h4 className="text-center mb-4 text-primary">Employee Registration</h4>
-
+    <Container className="py-5">
+      <div className="bg-white shadow rounded p-5">
+        <h2 className="text-center mb-4 text-primary">Employee Registration</h2>
+        <Form noValidate validated={validated} onSubmit={handleSubmit}>
+          {/* Personal Details */}
+          <Row>
+            <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Name</Form.Label>
-                <Form.Control type="text" placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
+                <Form.Label>Full Name</Form.Label>
+                <Form.Control required name="name" value={formData.name} onChange={handleChange} />
               </Form.Group>
-
               <Form.Group className="mb-3">
                 <Form.Label>NIC</Form.Label>
-                <Form.Control type="text" placeholder="Enter NIC" onChange={(e) => setNic(e.target.value)} />
+                <Form.Control required name="nic" value={formData.nic} onChange={handleChange} />
               </Form.Group>
-
+              <Row>
+                <Col>
+                  <Form.Group className="mb-3">
+                    <Form.Label>DOB</Form.Label>
+                    <Form.Control readOnly value={formData.dob} />
+                  </Form.Group>
+                </Col>
+                <Col>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Age</Form.Label>
+                    <Form.Control readOnly value={formData.age} />
+                  </Form.Group>
+                </Col>
+              </Row>
               <Form.Group className="mb-3">
-                <Form.Label>Telephone</Form.Label>
-                <Form.Control type="text" placeholder="Enter phone number" onChange={(e) => setTelephone(e.target.value)} />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control type="email" placeholder="Enter email" onChange={(e) => setEmail(e.target.value)} />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Basic Salary</Form.Label>
-                <Form.Control type="number" placeholder="Enter salary" onChange={(e) => setBasicSal(e.target.value)} />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Employee Role</Form.Label>
-                <Form.Select onChange={(e) => setRole(e.target.value)}>
-                  <option value="">Select Employee Role</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Manager">Manager</option>
-                  <option value="Headchef">Headchef</option>
-                  <option value="Subchef">Subchef</option>
-                  <option value="Supervisior">Supervisior</option>
-                  <option value="Waiter">Waiter</option>
-                  <option value="Helper">Helper</option>
+                <Form.Label>Gender</Form.Label>
+                <Form.Select required name="gender" value={formData.gender} onChange={handleChange}>
+                  <option value="">Select Gender</option>
+                  <option>Male</option><option>Female</option>
                 </Form.Select>
               </Form.Group>
-
               <Form.Group className="mb-3">
-                <Form.Label>System Username</Form.Label>
-                <Form.Control type="text" placeholder="Enter username" onChange={(e) => setUserName(e.target.value)} />
+                <Form.Label>Telephone</Form.Label>
+                <Form.Control required pattern="\d{10}" name="telephone" value={formData.telephone} onChange={handleChange} />
               </Form.Group>
+            </Col>
 
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Address</Form.Label>
+                <Form.Control required name="address" value={formData.address} onChange={handleChange} />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Email</Form.Label>
+                <Form.Control required type="email" name="email" value={formData.email} onChange={handleChange} />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Date of Joining</Form.Label>
+                <Form.Control required type="date" name="dateOfJoin" value={formData.dateOfJoin} onChange={handleChange} />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Marital Status</Form.Label>
+                <Form.Select required name="maritalStatus" value={formData.maritalStatus} onChange={handleChange}>
+                  <option value="">Select</option><option>Single</option><option>Married</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Bank Details */}
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Bank Name</Form.Label>
+                <Form.Select required name="bankName" value={formData.bankName} onChange={handleChange}>
+                  <option value="">Select Bank</option>
+                  {Object.keys(bankList).map(bank => (
+                    <option key={bank}>{bank}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Bank Branch</Form.Label>
+                <Form.Select required name="bankBranch" value={formData.bankBranch} onChange={handleChange}>
+                  <option value="">Select Branch</option>
+                  {(bankList[formData.bankName] || []).map(branch => (
+                    <option key={branch}>{branch}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Employment Info */}
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Account Number</Form.Label>
+                <Form.Control required name="accountNo" value={formData.accountNo} onChange={handleChange} />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Employment Type</Form.Label>
+                <Form.Select required name="empType" value={formData.empType} onChange={handleChange}>
+                  <option value="">Select Type</option><option>Permanent</option><option>Casual</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Salary and Role */}
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Basic Salary</Form.Label>
+                <Form.Control required type="number" name="basicSal" value={formData.basicSal} onChange={handleChange} />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Role</Form.Label>
+                <Form.Select required name="role" value={formData.role} onChange={handleChange}>
+                  <option value="">Select Role</option>
+                  <option>Admin</option><option>Manager</option><option>Headchef</option>
+                  <option>Subchef</option><option>Supervisior</option><option>Waiter</option><option>Helper</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Credentials */}
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Username</Form.Label>
+                <Form.Control required name="userName" value={formData.userName} onChange={handleChange} />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Password</Form.Label>
-                <Form.Control type="password" placeholder="Enter password" onChange={(e) => setPassword(e.target.value)} />
+                <Form.Control required type="password" name="password" value={formData.password} onChange={handleChange} minLength={6} />
               </Form.Group>
+            </Col>
+          </Row>
 
-              <Form.Group className="mb-3">
-                <Form.Label>Upload Image</Form.Label>
-                <Form.Control type="file" onChange={handleImageChange} />
-              </Form.Group>
+          {/* Image Upload with Bootstrap Validation */}
+          <Form.Group className="mb-4 text-center">
+            <Form.Label>Upload Image</Form.Label>
+            <Form.Control
+              required
+              type="file"
+              onChange={handleImage}
+              isInvalid={!image && validated}
+            />
+            <Form.Control.Feedback type="invalid">
+              Please upload an image.
+            </Form.Control.Feedback>
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                className="img-thumbnail mt-3"
+                style={{ maxHeight: '150px' }}
+                alt="Preview"
+              />
+            )}
+          </Form.Group>
 
-              {imagePreview && (
-                <div className="text-center mb-3">
-                  <h6>Image Preview:</h6>
-                  <img src={imagePreview} alt="Preview" className="img-fluid rounded" style={{ maxHeight: '150px' }} />
-                </div>
-              )}
-
-              <div className="d-flex justify-content-center">
-                <Button variant="primary" type="submit" className="w-50">Register</Button>
-              </div>
-            </Form>
-          </Col>
-        </Row>
-      </Container>
-    </div>
+          {/* Submit Button */}
+          <div className="text-center">
+            <Button variant="primary" type="submit" size="lg">Register Employee</Button>
+          </div>
+        </Form>
+      </div>
+    </Container>
   );
 }
 
