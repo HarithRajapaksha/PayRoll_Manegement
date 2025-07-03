@@ -18,13 +18,15 @@ import NotApprovedHalfDayComparision from "./Components/NotApprovedHalfDayCompar
 import LeaveNotAproved from "./Components/LeavesNotAproved";
 import AdvancePayment from "./Components/AdvancePayment";
 import HalfDayRequests from "./Components/HalfDayRequest";
-import AllUsersSallaryHandle from "./Components/AllUsersSallaryHandle";
+import AllowancesHandle from "./Components/AllowancesHandle.js";
 import NavigationBar from "./Components/NavBarAdmin.js";
 import NavBarUsers from "./Components/NavBarUsers.js";
 import NavBarAdmin from "./Components/NavBarAdmin.js";
 import AllUsersSalData from "./Components/GetTheAllUsersSalData.js";
 import AdminAllUsersSalData from "./Components/AdminGetAllUsersPaySlips.js";
 import UserManagement from "./Components/UserManagement.js";
+import ServiceChargeHandle from "./Components/ServiceChargeHandle.js";
+import ETF_Payment from "./Components/ETF_Payment.js";
 
 import { jwtDecode } from "jwt-decode";
 
@@ -77,11 +79,13 @@ function App() {
         <Route path="/LeaveNotAproved" element={<LeaveNotAproved />} />
         <Route path="/AdvancePayment" element={<AdvancePayment />} />
         <Route path="/HalfDayRequests" element={<HalfDayRequests />} />
-        <Route path="/AllUsersSallaryHandle" element={<AllUsersSallaryHandle />} />
+        <Route path="/AllowanceHandle" element={<AllowancesHandle />} />
         <Route path="/NavBar" element={<NavigationBar />} />
         <Route path="/AllUsersSalData" element={<AllUsersSalData />} />
         <Route path="/AdminAllUsersSalData" element={<AdminAllUsersSalData />} />
         <Route path="/UserManagement" element={<UserManagement />} />
+        <Route path="/ServiceChargeHandle" element={<ServiceChargeHandle />} />
+        <Route path="/ETF_Payment" element={<ETF_Payment />} />
       </Routes>
     </Router>
   );

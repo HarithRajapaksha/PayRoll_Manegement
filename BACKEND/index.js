@@ -1,9 +1,12 @@
-const express = require('express');
-const dotenv= require('dotenv');
-const cors = require('cors');
-const connectDB = require('./Src/Config/dbconnect');
-const authRoutes = require('./Src/Routes/authRoutes');
-const userRoutes = require('./Src/Routes/userRoutes');
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors'; 
+
+import connectDB from './Src/Config/dbconnect.js';
+import authRoutes from './Src/Routes/authRoutes.js';
+import userRoutes from './Src/Routes/userRoutes.js';
+import EtfPaymentRoute from './Src/Routes/EtfPaymentRoute.js';
+
 
 connectDB();
 const app = express();
@@ -18,6 +21,7 @@ app.use(cors());
 //Routes
 app.use("/api/auth",authRoutes);
 app.use("/api/users",userRoutes);
+app.use("/api/etf",EtfPaymentRoute);
 
 
 //Start the server

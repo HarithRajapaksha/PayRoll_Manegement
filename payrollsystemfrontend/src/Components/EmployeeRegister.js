@@ -213,7 +213,7 @@ function BasicExample() {
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Basic Salary</Form.Label>
+                <Form.Label>Basic Salary(Rs)</Form.Label>
                 <Form.Control required type="number" name="basicSal" value={formData.basicSal} onChange={handleChange} />
               </Form.Group>
             </Col>

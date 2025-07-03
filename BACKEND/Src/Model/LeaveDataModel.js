@@ -35,7 +35,10 @@ const leaveSchema = new mongoose.Schema({
     },
     declineReason:{
         type:String,
-    }
+    },
+    CorrectuserId:{
+        type:String
+    },
 },{timestamps:true});
 
 const Leave = mongoose.model('leave', leaveSchema);

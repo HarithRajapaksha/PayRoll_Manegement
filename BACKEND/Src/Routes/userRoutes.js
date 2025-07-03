@@ -18,8 +18,9 @@ const LastEmp=require("../Model/LastEmpSavemodel")
 router.get('/admin/:userId', verifyToken, authorizeRoles( 'Admin', 'Maneger', 'Headchef', 'Subchef', 'Supervisior', 'Waiter', 'Helper'), async (req, res) => {
   const userId = req.params.userId;
   console.log("User Id is : ", userId);
+  console.log("called this one");
   try {
-    const FindUser = await User.findOne({ userName: userId }).lean();
+    const FindUser = await User.findOne({ _id: userId }).lean();
     if (!FindUser) return res.status(404).json({ message: 'User not found' });
     res.status(200).json({ message: 'User found', FindUser });
     console.log("User found: ", FindUser);
@@ -70,7 +71,7 @@ router.get('/allUsersData',verifyToken,authorizeRoles('Admin','Maneger','Admin',
 
 
 //All users can access this route
-router.post('/addEmpData',verifyToken,authorizeRoles('Maneger', 'Headchef','Subchef','Supervisior','Waiter','Helper'),async(req,res)=>{
+router.post('/addEmpData',verifyToken,authorizeRoles('Maneger','Admin', 'Headchef','Subchef','Supervisior','Waiter','Helper'),async(req,res)=>{
    const {userId,role,aSal,lDays}=req.body;
 
     const newUser=new LeaveData({
@@ -93,13 +94,13 @@ router.post('/addEmpData',verifyToken,authorizeRoles('Maneger', 'Headchef','Subc
 
 
 //All users can access this route
-router.post('/addLeave',verifyToken,authorizeRoles('Maneger', 'Headchef','Subchef','Supervisior','Waiter','Helper'),async(req,res)=>{
+router.post('/addLeave',verifyToken,authorizeRoles('Maneger','Admin', 'Headchef','Subchef','Supervisior','Waiter','Helper'),async(req,res)=>{
   const {LeaveHolderId, LeaveStartDate,
     LeaveEndDate,
     NumOfDay ,
     Name,
     Role,
-    Reason,Status}=req.body;
+    Reason,Status, CorrectuserId}=req.body;
 
    const newLeave=new LeaveData({
     LeaveHolderId,
@@ -109,7 +110,8 @@ router.post('/addLeave',verifyToken,authorizeRoles('Maneger', 'Headchef','Subche
     Name,
     Role,
     Reason,
-    Status
+    Status,
+    CorrectuserId
    });
 
    console.log("Leave data is : ",newLeave);
@@ -1391,22 +1393,52 @@ router.get('/getAllowances', verifyToken, authorizeRoles('Admin', 'Manager', 'He
 });
 
 
-//Add data to payment
+//Add the allowances or the serviceCharge
 router.post('/addPaymentData', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'), async (req, res) => {
-  const { userId, serviceCharge,  allowance,} = req.body;
+  const { userId, serviceCharge, allowance } = req.body;
+
   try {
-    const paymentData = await Payments.create({
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const existingPayment = await Payments.findOne({
+      userId: userId,
+      createdAt: {
+        $gte: startOfMonth,
+        $lte: endOfMonth
+      }
+    });
+
+    if (existingPayment) {
+      // ✅ UPDATE existing payment
+      existingPayment.allowance = allowance || existingPayment.allowance;
+      existingPayment.serviceCharge = serviceCharge || existingPayment.serviceCharge;
+
+      await existingPayment.save();
+
+      return res.status(200).json({
+        message: 'Payment data updated for current month',
+        paymentData: existingPayment
+      });
+    }
+
+    // ✅ CREATE new payment
+    const newPayment = await Payments.create({
       userId,
-      serviceCharge, 
+      serviceCharge,
       allowance,
     });
 
-    res.status(201).json({ message: 'Payment data added successfully', paymentData });
+    res.status(201).json({ message: 'Payment data added successfully', paymentData: newPayment });
+
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+
 
 // Get current user's payment data for the current month
 router.get('/getAllPaymentData/:userId', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'), async (req, res) => {
@@ -1511,19 +1543,19 @@ router.put('/updateUserRoleAndSalary/:id', verifyToken, authorizeRoles('Admin', 
 //Update the user role and the basic salary
 router.put('/updateRoleSal/:id', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
   const { id } = req.params;
-  const { role, basicSal } = req.body;
+  const { role, basicSal,telephone,address,maritalStatus,empType, bankName, bankBranch, accountNo} = req.body;
 
   console.log("Updating user with ID:", id, "Role:", role, "Basic Salary:", basicSal);
 
   try {
     // Find the user by ID and update their role and basic salary
-    const updatedUser = await User.findByIdAndUpdate(id, { role, basicSal }, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(id, { role, basicSal,telephone,address,maritalStatus,empType, bankName, bankBranch, accountNo }, { new: true });
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json({ message: 'User role and basic salary updated successfully', updatedUser });
+    res.status(200).json({ message: 'Data updated successfully', updatedUser });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: 'Internal Server Error' });

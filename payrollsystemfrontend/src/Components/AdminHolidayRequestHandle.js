@@ -91,7 +91,7 @@ const AdminHolidayRequestHandle = () => {
       <Table striped bordered hover responsive>
         <thead>
           <tr>
-            <th>#</th>
+            <th>EMP-ID</th>
             <th>Leave Holder</th>
             <th>Start Date</th>
             <th>End Date</th>
@@ -103,7 +103,7 @@ const AdminHolidayRequestHandle = () => {
           {holidayData.length > 0 ? (
             holidayData.map((holiday, index) => (
               <tr key={holiday._id}>
-                <td>{index + 1}</td>
+                <td>{holiday.CorrectuserId || 'N/A'}</td>
                 <td>{holiday.Name}</td>
                 <td>{new Date(holiday.LeaveStartDate).toLocaleDateString()}</td>
                 <td>{new Date(holiday.LeaveEndDate).toLocaleDateString()}</td>

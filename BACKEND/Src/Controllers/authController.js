@@ -83,7 +83,7 @@ const login=async(req,res)=>{
             return res.status(401).json({message:'Password is not correct'});
         }
 
-        const token=jwt.sign({id:userFind._id,role:userFind.role},process.env.JWT_SECRET_KEY,{expiresIn:'10h'});
+        const token=jwt.sign({id:userFind._id,role:userFind.role,empId:userFind.CorrectuserId},process.env.JWT_SECRET_KEY,{expiresIn:'10h'});
         res.status(200).json({message:'User logged in successfully',token,userFind});
     }catch(err){
         res.status(500).json({message:'User login failed'});
