@@ -7,11 +7,18 @@ import html2canvas from 'html2canvas';
 function AdminSalaryViewer() {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState('');
   const [salaryData, setSalaryData] = useState(null);
   const token = localStorage.getItem('token');
   const slipRef = useRef();
+
+  // Month names for display
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -23,7 +30,7 @@ function AdminSalaryViewer() {
           },
         });
   
-        console.log('User data:', response.data); // 🐛 Check the structure here
+        console.log('User data:', response.data);
         const userArray = Array.isArray(response.data)
           ? response.data
           : response.data.users || response.data.AllUsers || response.data.FindUser || [];
@@ -31,13 +38,12 @@ function AdminSalaryViewer() {
         setUsers(userArray);
       } catch (error) {
         console.error('Error fetching user list:', error);
-        setUsers([]); // ensure fallback to empty array
+        setUsers([]);
       }
     };
   
     fetchUsers();
   }, [token]);
-  
 
   const fetchSalaryData = async () => {
     try {
@@ -62,9 +68,19 @@ function AdminSalaryViewer() {
     if (selectedUserId && month) fetchSalaryData();
   };
 
+  // Handle user selection and get user details
+  const handleUserSelection = (userId) => {
+    setSelectedUserId(userId);
+    const user = users.find(u => u._id === userId);
+    setSelectedUser(user);
+  };
+
   const handleDownloadPDF = async () => {
     const element = slipRef.current;
-    const canvas = await html2canvas(element);
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      backgroundColor: '#ffffff'
+    });
     const imgData = canvas.toDataURL('image/png');
 
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -73,7 +89,95 @@ function AdminSalaryViewer() {
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`SalarySlip_${salaryData.name}_${salaryData.year}_${salaryData.month}.pdf`);
+    pdf.save(`Payslip_${selectedUser?.name || salaryData.name}_${monthNames[parseInt(month) - 1]}_${year}.pdf`);
+  };
+
+  const payslipStyles = {
+    container: {
+      fontFamily: 'Times New Roman, serif',
+      backgroundColor: '#ffffff',
+      padding: '30px',
+      border: '2px solid #000',
+      maxWidth: '800px',
+      margin: '0 auto',
+      fontSize: '14px',
+      lineHeight: '1.4'
+    },
+    header: {
+      textAlign: 'center',
+      marginBottom: '25px',
+      borderBottom: '2px solid #000',
+      paddingBottom: '15px'
+    },
+    companyName: {
+      fontSize: '24px',
+      fontWeight: 'bold',
+      marginBottom: '5px',
+      textTransform: 'uppercase',
+      letterSpacing: '1px'
+    },
+    payslipTitle: {
+      fontSize: '18px',
+      fontWeight: 'bold',
+      marginTop: '10px',
+      textDecoration: 'underline'
+    },
+    employeeInfo: {
+      marginBottom: '20px',
+      backgroundColor: '#f8f9fa',
+      padding: '15px',
+      border: '1px solid #dee2e6'
+    },
+    infoRow: {
+      marginBottom: '8px',
+      display: 'flex',
+      justifyContent: 'space-between'
+    },
+    label: {
+      fontWeight: 'bold',
+      width: '40%'
+    },
+    value: {
+      width: '60%'
+    },
+    salarySection: {
+      marginBottom: '20px'
+    },
+    salaryTable: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      marginBottom: '15px'
+    },
+    tableHeader: {
+      backgroundColor: '#343a40',
+      color: 'white',
+      fontWeight: 'bold',
+      padding: '12px',
+      textAlign: 'left',
+      border: '1px solid #000'
+    },
+    tableCell: {
+      padding: '10px',
+      border: '1px solid #000',
+      textAlign: 'left'
+    },
+    netSalary: {
+      backgroundColor: '#d4edda',
+      border: '2px solid #28a745',
+      padding: '15px',
+      textAlign: 'center',
+      fontSize: '18px',
+      fontWeight: 'bold',
+      color: '#155724'
+    },
+    footer: {
+      marginTop: '30px',
+      textAlign: 'center',
+      fontSize: '12px',
+      color: '#6c757d',
+      borderTop: '1px solid #dee2e6',
+      paddingTop: '10px'
+    }
   };
 
   return (
@@ -88,7 +192,7 @@ function AdminSalaryViewer() {
               <Form.Label>Select Employee</Form.Label>
               <Form.Select
                 value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
+                onChange={(e) => handleUserSelection(e.target.value)}
               >
                 <option value="">-- Select Employee --</option>
                 {users.map((user) => (
@@ -119,9 +223,9 @@ function AdminSalaryViewer() {
                 onChange={(e) => setMonth(e.target.value)}
               >
                 <option value="">-- Select Month --</option>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {new Date(0, i).toLocaleString('default', { month: 'long' })}
+                {monthNames.map((monthName, index) => (
+                  <option key={index + 1} value={index + 1}>
+                    {monthName}
                   </option>
                 ))}
               </Form.Select>
@@ -137,44 +241,118 @@ function AdminSalaryViewer() {
       {/* Salary Slip View */}
       {salaryData ? (
         <>
-          <div ref={slipRef} style={{ backgroundColor: 'white', padding: '20px' }}>
-            <Card className="p-3">
-              <Card.Header as="h5">Salary Slip - {salaryData.name}</Card.Header>
-              <Card.Body>
-                <Row>
-                  <Col><strong>Year:</strong> {salaryData.year}</Col>
-                  <Col><strong>Month:</strong> {salaryData.month}</Col>
-                </Row>
-                <hr />
-                <Row>
-                  <Col md={6}>
-                    <p><strong>Basic Salary:</strong> Rs. {salaryData.BasicSal}</p>
-                    <p><strong>Allowance:</strong> Rs. {salaryData.allowance}</p>
-                    <p><strong>Service Charge:</strong> Rs. {salaryData.serviceCharge}</p>
-                  </Col>
-                  <Col md={6}>
-                    <p><strong>EPF:</strong> Rs. {salaryData.EPF}</p>
-                    <p><strong>ETF:</strong> Rs. {salaryData.ETF}</p>
-                    <p><strong>No Pay:</strong> Rs. {Number(salaryData.NoPay).toFixed(2)}</p>
-                    <p><strong>Half Days:</strong> {salaryData.NumberOfHalfDays}</p>
-                  </Col>
-                </Row>
-                <hr />
-                <h5 className="text-success">Net Salary: Rs. {Number(salaryData.NetSalary).toFixed(2)}</h5>
-              </Card.Body>
-            </Card>
+          <div ref={slipRef} style={payslipStyles.container}>
+            {/* Company Header */}
+            <div style={payslipStyles.header}>
+              <div style={payslipStyles.companyName}>
+                THE CARNIVO RESTAURANT
+              </div>
+              <div style={payslipStyles.payslipTitle}>
+                PAYSLIP
+              </div>
+            </div>
+
+            {/* Employee Information */}
+            <div style={payslipStyles.employeeInfo}>
+              <div style={payslipStyles.infoRow}>
+                <span style={payslipStyles.label}>Employee ID:</span>
+                <span style={payslipStyles.value}>{selectedUser?.CorrectuserId || 'N/A'}</span>
+              </div>
+              <div style={payslipStyles.infoRow}>
+                <span style={payslipStyles.label}>Employee Name:</span>
+                <span style={payslipStyles.value}>{selectedUser?.name || salaryData.name}</span>
+              </div>
+              <div style={payslipStyles.infoRow}>
+                <span style={payslipStyles.label}>Job Role:</span>
+                <span style={payslipStyles.value}>{selectedUser?.role || 'N/A'}</span>
+              </div>
+              <div style={payslipStyles.infoRow}>
+                <span style={payslipStyles.label}>NIC:</span>
+                <span style={payslipStyles.value}>{selectedUser?.nic || 'N/A'}</span>
+              </div>
+              <div style={payslipStyles.infoRow}>
+                <span style={payslipStyles.label}>Pay Period:</span>
+                <span style={payslipStyles.value}>
+                  {monthNames[parseInt(month) - 1]} {year}
+                </span>
+              </div>
+            </div>
+
+            {/* Salary Details */}
+            <div style={payslipStyles.salarySection}>
+              <table style={payslipStyles.salaryTable}>
+                <thead>
+                  <tr>
+                    <th style={payslipStyles.tableHeader}>EARNINGS</th>
+                    <th style={payslipStyles.tableHeader}>AMOUNT (Rs.)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>Basic Salary</td>
+                    <td style={payslipStyles.tableCell}>{Number(salaryData.BasicSal).toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>Allowance</td>
+                    <td style={payslipStyles.tableCell}>{Number(salaryData.allowance).toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>Service Charge</td>
+                    <td style={payslipStyles.tableCell}>{Number(salaryData.serviceCharge).toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <table style={payslipStyles.salaryTable}>
+                <thead>
+                  <tr>
+                    <th style={payslipStyles.tableHeader}>DEDUCTIONS</th>
+                    <th style={payslipStyles.tableHeader}>AMOUNT (Rs.)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>EPF (Employee)</td>
+                    <td style={payslipStyles.tableCell}>{Number(salaryData.EPF).toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>ETF</td>
+                    <td style={payslipStyles.tableCell}>{Number(salaryData.ETF).toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>No Pay</td>
+                    <td style={payslipStyles.tableCell}>{Number(salaryData.NoPay).toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>Half Days</td>
+                    <td style={payslipStyles.tableCell}>{salaryData.NumberOfHalfDays}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Net Salary */}
+            <div style={payslipStyles.netSalary}>
+              NET SALARY: Rs. {Number(salaryData.NetSalary).toFixed(2)}
+            </div>
+
+            {/* Footer */}
+            <div style={payslipStyles.footer}>
+              <p>This is a computer-generated payslip and does not require a signature.</p>
+              <p>Generated on: {new Date().toLocaleDateString()}</p>
+            </div>
           </div>
 
-          <div className="mt-3 text-end">
-            <Button variant="secondary" onClick={handleDownloadPDF}>
+          <div className="mt-3 text-center">
+            <Button variant="primary" onClick={handleDownloadPDF} size="lg">
               Download PDF
             </Button>
           </div>
         </>
-      ):(
+      ) : (
         <div className="text-center mt-4">
-        <p className="text-muted">No salary data found. Please select a user, year, and month.</p>
-      </div>
+          <p className="text-muted">No salary data found. Please select a user, year, and month.</p>
+        </div>
       )}
     </Container>
   );
