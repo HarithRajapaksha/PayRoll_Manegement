@@ -1,6 +1,7 @@
 import { jwtDecode } from 'jwt-decode';
 import React, { useState, useEffect } from 'react';
 import { Button, Table, Modal, Form } from 'react-bootstrap';
+import './ChangebgColour.css'; // Assuming you have a CSS file for styling
 import axios from 'axios';
 
 const SalaryRequestForm = () => {
@@ -107,8 +108,9 @@ const SalaryRequestForm = () => {
   }
 
   return (
+    <div className="page-bg">
     <div className="container mt-4">
-      <h2 className="mb-4 text-center">Monthly Middle Salary Requests</h2>
+      <h2 className="mb-4 text-center">Advance payment Management</h2>
       <Table striped bordered hover responsive>
         <thead className="table-dark text-center">
           <tr>
@@ -190,6 +192,7 @@ const SalaryRequestForm = () => {
         </Modal.Footer>
       </Modal>
     </div>
+  </div>
   );
 };
 

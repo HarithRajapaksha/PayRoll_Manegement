@@ -6,7 +6,7 @@ const User = require('../Model/UserModel');
 const LeaveData= require('../Model/LeaveDataModel');
 const MiddleSal= require('../Model/MiddleSalModel');
 const Attendance=require('../Model/AttendenceData');
-const EPF_EPF=require('../Model/ETF_EPFModel');
+const EPFModel=require('../Model/EPFModel');
 const HalfDay=require('../Model/HalfDayModel');
 const Allowance=require('../Model/Allowancemodel');
 const Payments=require('../Model/PaymentsModel');
@@ -20,7 +20,7 @@ router.get('/admin/:userId', verifyToken, authorizeRoles( 'Admin', 'Maneger', 'H
   console.log("User Id is : ", userId);
   console.log("called this one");
   try {
-    const FindUser = await User.findOne({ _id: userId }).lean();
+    const FindUser = await User.findOne({ CorrectuserId: userId }).lean();
     if (!FindUser) return res.status(404).json({ message: 'User not found' });
     res.status(200).json({ message: 'User found', FindUser });
     console.log("User found: ", FindUser);
@@ -319,61 +319,137 @@ router.put('/updateUserAttendence',verifyToken,authorizeRoles('Admin','Maneger',
   }
 });
 
-router.post('/addUserAttendence',verifyToken,authorizeRoles('Admin','Maneger', 'Headchef','Subchef','Supervisior','Waiter','Helper'),async(req,res)=>{
-  const {userId,name,date,time}=req.body;
+router.post('/addUserAttendence', verifyToken, authorizeRoles('Admin', 'Maneger', 'Headchef', 'Subchef', 'Supervisior', 'Waiter', 'Helper'), async (req, res) => {
+  const { userId, name, date, time } = req.body;
 
-  const newAttendence=new Attendance({
+  try {
+    // Check if attendance already exists for the same user and date
+    const existingAttendance = await Attendance.findOne({ userId, date });
+
+    if (existingAttendance) {
+      return res.status(400).json({ message: 'Attendance already marked for this user on this date.' });
+    }
+
+    // If not found, create new attendance
+    const newAttendance = new Attendance({
       userId,
       name,
       date,
       time,
-  });
-  console.log("Attendence data is : ",newAttendence);
+    });
 
-  try {
-      const user=await newAttendence.save();
-      res.status(200).json({message:'Attendence data added',user});
-      console.log("User added ",user);
+    const savedAttendance = await newAttendance.save();
+    res.status(200).json({ message: 'Attendance data added', user: savedAttendance });
+    console.log("User added:", savedAttendance);
+
   } catch (error) {
-      res.status(500).json({message:'Attendence data not added'});
-      console.log("Error is : ",error);
+    res.status(500).json({ message: 'Attendance data not added', error: error.message });
+    console.log("Error is:", error);
   }
-
 });
 
 
-router.post('/addEPF_EPF',verifyToken,authorizeRoles('Admin','Maneger', 'Headchef','Subchef','Supervisior','Waiter','Helper'),async(req,res)=>{
-  const {  epfNumber,
-    etfNumber,
-    bankAccount,
-    bankName,
-    bankBranch,
-    nic,
-    address,
-    fullName}=req.body;
 
-  const newEPF_EPF=new EPF_EPF({
-    epfNumber:epfNumber,
-    etfNumber:etfNumber,
-    bankAccount:bankAccount,
-    bankName:bankName,
-    bankBranch:bankBranch,
-    nic:nic,
-    address:address,
-    fulName:fullName
-  });
+router.post('/addEPFData/:year/:month', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'), async (req, res) => {
+  const { UserId, EmployeeId, Employee, Employer } = req.body;
+  const { year, month } = req.params;
+
+  console.log("Called to addEPFData at", new Date().toLocaleString());
+  console.log("Request Data:", { UserId, EmployeeId, Employee, Employer, year, month });
 
   try {
-      const user=await newEPF_EPF.save();
-      res.status(200).json({message:'EPF_EPF data added',user});
-      console.log("User added ",user);
-  } catch (error) {
-      res.status(500).json({message:'EPF_EPF data not added'});
-      console.log("Error is : ",error);
-  }
+    // Validate year and month
+    const parsedYear = parseInt(year);
+    const parsedMonth = parseInt(month); // Frontend sends 1-12, matching MongoDB's $month
+    if (isNaN(parsedYear) || isNaN(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
+      console.log("Validation failed: Invalid year or month");
+      return res.status(400).json({ message: 'Invalid year or month' });
+    }
 
+    // Check if EPF data already exists for the EmployeeId in the specified month and year
+    const existingEPF = await EPFModel.findOne({
+      EmployeeId,
+      $expr: {
+        $and: [
+          { $eq: [{ $month: "$createdAt" }, parsedMonth] },
+          { $eq: [{ $year: "$createdAt" }, parsedYear] }
+        ]
+      }
+    });
+
+    // First submission: Create record with either Employee or Employer
+    if (!existingEPF) {
+      if (Employee === undefined && Employer === undefined) {
+        console.log("Validation failed: At least one of Employee or Employer contribution is required");
+        return res.status(400).json({ message: 'At least one of Employee or Employer contribution is required' });
+      }
+
+      const newEPFData = new EPFModel({
+        UserId,
+        EmployeeId,
+        Employee: Employee || 0, // Set to 0 if not provided
+        Employer: Employer || 0, // Set to 0 if not provided
+        createdAt: new Date(parsedYear, parsedMonth - 1, 1) // Set to 1st of specified month
+      });
+
+      console.log("Creating new EPF data:", newEPFData);
+      const savedEPF = await newEPFData.save();
+      return res.status(200).json({ message: 'EPF data added successfully', data: savedEPF });
+    }
+
+    // Second submission: Update with the other contribution (Employee or Employer)
+    // Validate UserId and EmployeeId match
+    if (existingEPF.UserId !== UserId || existingEPF.EmployeeId !== EmployeeId) {
+      console.log("Validation failed: UserId or EmployeeId does not match existing record");
+      return res.status(403).json({ message: 'UserId or EmployeeId does not match existing record' });
+    }
+
+    // Determine which field to update based on what was provided
+    const updateData = {};
+    if (Employee !== undefined) {
+      if (existingEPF.Employee !== 0) {
+        console.log("Validation failed: Employee contribution already set");
+        return res.status(400).json({ message: 'Employee contribution already set' });
+      }
+      updateData.Employee = Employee;
+    }
+    if (Employer !== undefined) {
+      if (existingEPF.Employer !== 0) {
+        console.log("Validation failed: Employer contribution already set");
+        return res.status(400).json({ message: 'Employer contribution already set' });
+      }
+      updateData.Employer = Employer;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      console.log("Validation failed: No valid fields provided for update");
+      return res.status(400).json({ message: 'No valid fields provided for update' });
+    }
+
+    const updatedEPF = await EPFModel.findOneAndUpdate(
+      {
+        EmployeeId,
+        $expr: {
+          $and: [
+            { $eq: [{ $month: "$createdAt" }, parsedMonth] },
+            { $eq: [{ $year: "$createdAt" }, parsedYear] }
+          ]
+        }
+      },
+      { $set: updateData },
+      { new: true }
+    );
+
+    console.log("Updated EPF data:", updatedEPF);
+    res.status(200).json({ message: 'EPF data updated successfully', data: updatedEPF });
+
+  } catch (error) {
+    console.error("Error processing EPF data:", error);
+    res.status(500).json({ message: 'Failed to process EPF data', error: error.message });
+  }
 });
 
+//Add Half Day data
 router.post('/addHalfDay',verifyToken,authorizeRoles('Admin','Maneger', 'Headchef','Subchef','Supervisior','Waiter','Helper'),async(req,res)=>{
   const {userId,date,whichHalf,reason}=req.body;
 
@@ -396,9 +472,7 @@ router.post('/addHalfDay',verifyToken,authorizeRoles('Admin','Maneger', 'Headche
 
 
 
-router.get('/getSalData/:id/:year/:month', verifyToken, authorizeRoles(
-  'Admin', 'Maneger', 'Headchef', 'Subchef', 'Supervisior', 'Waiter', 'Helper'
-), async (req, res) => {
+router.get('/getSalData/:id/:year/:month', verifyToken, authorizeRoles('Admin', 'Maneger', 'Headchef', 'Subchef', 'Supervisior', 'Waiter', 'Helper'), async (req, res) => {
   const { id, year, month } = req.params;
   console.log("User ID:", id, "Year:", year, "Month:", month);
 
@@ -507,9 +581,9 @@ router.get('/getSalData/:id/:year/:month', verifyToken, authorizeRoles(
 
 
 //Get only this month Attendence data
-router.get('/getUserAttendence/:year/:month', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'), async (req, res) => {
+router.get('/UserAttendence/:year/:month', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'), async (req, res) => {
   const { year, month } = req.params;
-
+  console.log("called api");
   try {
     // Convert year and month to integers
     const yearInt = parseInt(year, 10);
@@ -549,6 +623,7 @@ router.get('/getUserAttendence/:year/:month', verifyToken, authorizeRoles('Admin
       }
     ]);
 
+    console.log("User Attendance Data:", userAttendance);
     // Check if userAttendance has results
     if (userAttendance.length === 0) {
       return res.status(404).json({ message: 'No attendance data found for the given month' });
@@ -851,6 +926,13 @@ router.get('/getApprovedLeaveData', verifyToken, authorizeRoles('Admin', 'Manage
 //get the all users attendence data
 router.get('/getAllApprovedLeaveCounts', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'), async (req, res) => {
   
+
+   const now = new Date();
+
+    // If year/month provided in query, use them, otherwise use current year/month
+  const yearInt = parseInt(req.query.year) || now.getFullYear();
+  const monthInt = parseInt(req.query.month) || now.getMonth() + 1; // getMonth() is 0-indexed
+
   const startDate = new Date(yearInt, monthInt - 1, 1); // First day of the month
   const endDate = new Date(yearInt, monthInt, 1); // First day of next month
   
@@ -1511,7 +1593,8 @@ router.get('/getAllUserIdData', verifyToken, authorizeRoles('Admin', 'Manager', 
       return res.status(404).json({ message: 'No user ID data found' });
     }
 
-    res.status(200).json( userIdData);
+    res.status(200).json(userIdData);
+    console.log("User ID Data:", userIdData);
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -1561,6 +1644,1415 @@ router.put('/updateRoleSal/:id', verifyToken, authorizeRoles('Admin', 'Manager',
     res.status(500).json({ message: 'Internal Server Error' });
   }
 })
+
+
+
+//--------------------------------------------------------
+// Main EPF API with correct UserId field mapping and proper date filtering
+router.get('/getEpfModelData/:month/:year', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  const { month, year } = req.params;
+   
+  console.log("=== EPF Data Request ===");
+  console.log("Month:", month, "Year:", year);
+  
+  try {
+    // Validate parameters
+    const monthInt = parseInt(month);
+    const yearInt = parseInt(year);
+    
+    if (!monthInt || !yearInt || monthInt < 1 || monthInt > 12) {
+      return res.status(400).json({ message: 'Invalid month or year' });
+    }
+
+    // Create proper date range for the selected month/year
+    const startDate = new Date(yearInt, monthInt - 1, 1); // First day of month
+    const endDate = new Date(yearInt, monthInt, 0, 23, 59, 59, 999); // Last day of month
+    
+    console.log("Date range:", startDate.toISOString(), "to", endDate.toISOString());
+
+    // First, let's check what EPF data exists in the entire collection
+    const totalEpfCount = await EPFModel.countDocuments();
+    console.log("Total EPF records in database:", totalEpfCount);
+
+    // Check EPF data in the date range (without Employer filter first)
+    const epfInDateRange = await EPFModel.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    }).lean();
+
+    console.log("EPF records in date range:", epfInDateRange.length);
+
+    // If no records in date range, let's see what dates are available
+    if (epfInDateRange.length === 0) {
+      const sampleDates = await EPFModel.find({}, { createdAt: 1 }).limit(10).lean();
+      console.log("Sample available dates:", sampleDates.map(d => ({
+        date: d.createdAt,
+        month: d.createdAt.getMonth() + 1,
+        year: d.createdAt.getFullYear()
+      })));
+      
+      return res.status(404).json({ 
+        message: `No EPF data found for ${getMonthName(monthInt)} ${yearInt}.`,
+        availableDates: sampleDates.map(d => d.createdAt),
+        searchedRange: { startDate, endDate }
+      });
+    }
+
+    // Now filter for records with Employer > 0 OR Employee > 0 (to include employee contributions)
+    const epfRecords = epfInDateRange.filter(record => 
+      (record.Employer && record.Employer > 0) || (record.Employee && record.Employee > 0)
+    );
+
+    console.log("EPF records with contributions:", epfRecords.length);
+    console.log("Sample EPF record:", epfRecords[0]);
+
+    if (epfRecords.length === 0) {
+      return res.status(404).json({ 
+        message: `EPF data found for ${getMonthName(monthInt)} ${yearInt}, but no records have employer or employee contributions.`,
+        totalRecordsInPeriod: epfInDateRange.length
+      });
+    }
+
+    // Extract unique UserIds (note: using UserId field from your EPF model)
+    const userIds = [...new Set(epfRecords
+      .map(record => record.UserId)
+      .filter(id => id && mongoose.Types.ObjectId.isValid(id))
+    )];
+
+    console.log("Unique UserIds found:", userIds.length);
+
+    // Fetch all users in one query
+    let users = [];
+    if (userIds.length > 0) {
+      users = await User.find({
+        _id: { $in: userIds }
+      }).lean();
+    }
+
+    console.log("Users fetched:", users.length);
+
+    // Create user lookup map
+    const userMap = {};
+    users.forEach(user => {
+      userMap[user._id.toString()] = user;
+    });
+
+    // Transform data with user information using correct field names
+    const transformedData = epfRecords.map(epfRecord => {
+      // Find user by UserId
+      const user = userMap[epfRecord.UserId?.toString()];
+
+      // Debug log for first record
+      if (epfRecord === epfRecords[0]) {
+        console.log("First EPF record details:", {
+          epfId: epfRecord._id,
+          UserId: epfRecord.UserId,
+          EmployeeId: epfRecord.EmployeeId,
+          Employee: epfRecord.Employee,
+          Employer: epfRecord.Employer,
+          userFound: !!user,
+          userName: user?.name
+        });
+      }
+
+      return {
+        _id: epfRecord._id,
+        employeeId: epfRecord.EmployeeId || user?.empId || 'N/A',
+        employeeName: user?.name || 'Name Not Found',
+        basicSalary: parseInt(user?.basicSal) || 0,
+        role: user?.role || 'Role Not Found',
+        Employee: epfRecord.Employee || 0, // Employee contribution - this was the issue!
+        Employer: epfRecord.Employer || 0,  // Employer contribution
+        createdAt: epfRecord.createdAt,
+        userId: user?._id || null,
+        userFound: !!user
+      };
+    });
+
+    console.log("Final transformed data count:", transformedData.length);
+    console.log("Sample transformed record:", transformedData[0]);
+
+    // Count records with and without user data
+    const withUserData = transformedData.filter(item => item.userFound);
+    const withoutUserData = transformedData.filter(item => !item.userFound);
+
+    console.log("Records with user data:", withUserData.length);
+    console.log("Records without user data:", withoutUserData.length);
+
+    res.status(200).json({ 
+      epfData: transformedData,
+      totalRecords: transformedData.length,
+      recordsWithUserData: withUserData.length,
+      recordsWithoutUserData: withoutUserData.length,
+      dateRange: { startDate, endDate },
+      month: getMonthName(monthInt),
+      year: yearInt
+    });
+
+  } catch (error) {
+    console.error("Error in getEpfModelData:", error);
+    res.status(500).json({ 
+      message: 'Internal Server Error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Server Error'
+    });
+  }
+});
+
+// Helper function to get month name
+function getMonthName(monthNumber) {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return months[monthNumber - 1] || 'Unknown';
+}
+
+// Alternative API using aggregation with correct field names and date filtering
+router.get('/getEpfModelDataAggregated/:month/:year', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  const { month, year } = req.params;
+  
+  try {
+    const monthInt = parseInt(month);
+    const yearInt = parseInt(year);
+    
+    // Create proper date range
+    const startDate = new Date(yearInt, monthInt - 1, 1);
+    const endDate = new Date(yearInt, monthInt, 0, 23, 59, 59, 999);
+
+    console.log("Aggregation - Date range:", startDate.toISOString(), "to", endDate.toISOString());
+
+    const result = await EPFModel.aggregate([
+      // Match EPF records in date range with any contributions
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          $or: [
+            { Employer: { $gt: 0 } },
+            { Employee: { $gt: 0 } }
+          ]
+        }
+      },
+      // Convert UserId to ObjectId if it's a string
+      {
+        $addFields: {
+          userObjectId: {
+            $cond: {
+              if: { $type: "$UserId" },
+              then: { $toObjectId: "$UserId" },
+              else: "$UserId"
+            }
+          }
+        }
+      },
+      // Lookup user data using UserId field
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userObjectId',
+          foreignField: '_id',
+          as: 'userDetails'
+        }
+      },
+      // Get the first user from the array
+      {
+        $addFields: {
+          user: { $arrayElemAt: ["$userDetails", 0] }
+        }
+      },
+      // Project final structure with correct field mappings
+      {
+        $project: {
+          _id: 1,
+          employeeId: {
+            $ifNull: ["$EmployeeId", "$user.empId", "N/A"]
+          },
+          employeeName: {
+            $ifNull: ["$user.name", "Name Not Found"]
+          },
+          basicSalary: {
+            $cond: {
+              if: { $ne: ["$user.basicSal", null] },
+              then: { $toInt: "$user.basicSal" },
+              else: 0
+            }
+          },
+          role: {
+            $ifNull: ["$user.role", "Role Not Found"]
+          },
+          Employee: { $ifNull: ["$Employee", 0] }, // Make sure Employee contribution is included
+          Employer: { $ifNull: ["$Employer", 0] },
+          createdAt: 1,
+          userFound: { $ne: ["$user", null] }
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      }
+    ]);
+
+    console.log("Aggregated result count:", result.length);
+    if (result.length > 0) {
+      console.log("Sample aggregated record:", result[0]);
+    }
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        message: `No EPF data found for ${getMonthName(monthInt)} ${yearInt}.`
+      });
+    }
+
+    res.status(200).json({ 
+      epfData: result,
+      totalRecords: result.length,
+      recordsWithUserData: result.filter(item => item.userFound).length,
+      recordsWithoutUserData: result.filter(item => !item.userFound).length,
+      month: getMonthName(monthInt),
+      year: yearInt
+    });
+
+  } catch (error) {
+    console.error("Aggregation error:", error);
+    res.status(500).json({ 
+      message: 'Internal Server Error',
+      error: error.message
+    });
+  }
+});
+
+// Debug endpoint to check what data exists
+router.get('/debugEpfDates', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+  try {
+    // Get all EPF records with their dates
+    const allRecords = await EPFModel.find({}, { 
+      createdAt: 1, 
+      UserId: 1, 
+      EmployeeId: 1, 
+      Employee: 1, 
+      Employer: 1 
+    }).sort({ createdAt: -1 }).limit(20).lean();
+
+    // Group by month/year
+    const dateGroups = {};
+    allRecords.forEach(record => {
+      const date = new Date(record.createdAt);
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!dateGroups[monthYear]) {
+        dateGroups[monthYear] = [];
+      }
+      dateGroups[monthYear].push(record);
+    });
+
+    res.json({
+      totalRecords: await EPFModel.countDocuments(),
+      recentRecords: allRecords,
+      dateGroups: Object.keys(dateGroups).map(monthYear => ({
+        monthYear,
+        count: dateGroups[monthYear].length,
+        hasEmployer: dateGroups[monthYear].filter(r => r.Employer > 0).length,
+        hasEmployee: dateGroups[monthYear].filter(r => r.Employee > 0).length
+      }))
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Additional helper endpoint to check available dates
+router.get('/getAvailableEpfDates', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  try {
+    const availableDates = await EPFModel.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          count: { $sum: 1 },
+          withEmployer: {
+            $sum: { $cond: [{ $gt: ["$Employer", 0] }, 1, 0] }
+          },
+          withEmployee: {
+            $sum: { $cond: [{ $gt: ["$Employee", 0] }, 1, 0] }
+          },
+          minDate: { $min: "$createdAt" },
+          maxDate: { $max: "$createdAt" }
+        }
+      },
+      {
+        $sort: { "_id.year": -1, "_id.month": -1 }
+      }
+    ]);
+    res.status(200).json({ availableDates });
+  } catch (error) {
+    console.error("Error getting available dates:", error);
+    res.status(500).json({ message: 'Error fetching available dates' });
+  }
+});
+
+// Debug endpoint to check EPF model structure
+router.get('/debugEpfModel', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+  try {
+    const sampleRecord = await EPFModel.findOne().lean();
+    const totalCount = await EPFModel.countDocuments();
+    
+    res.status(200).json({
+      totalRecords: totalCount,
+      sampleRecord: sampleRecord,
+      modelFields: sampleRecord ? Object.keys(sampleRecord) : []
+    });
+  } catch (error) {
+    console.error("Debug error:", error);
+    res.status(500).json({ message: 'Debug error' });
+  }
+});
+
+// Additional helper endpoint to check available dates
+router.get('/getAvailableEpfDates', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  try {
+    const availableDates = await EPFModel.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          count: { $sum: 1 },
+          minDate: { $min: "$createdAt" },
+          maxDate: { $max: "$createdAt" }
+        }
+      },
+      {
+        $sort: { "_id.year": -1, "_id.month": -1 }
+      }
+    ]);
+
+    res.status(200).json({ availableDates });
+  } catch (error) {
+    console.error("Error getting available dates:", error);
+    res.status(500).json({ message: 'Error fetching available dates' });
+  }
+});
+
+// Debug endpoint to check EPF model structure
+router.get('/debugEpfModel', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+  try {
+    const sampleRecord = await EPFModel.findOne().lean();
+    const totalCount = await EPFModel.countDocuments();
+    
+    res.status(200).json({
+      totalRecords: totalCount,
+      sampleRecord: sampleRecord,
+      modelFields: sampleRecord ? Object.keys(sampleRecord) : []
+    });
+  } catch (error) {
+    console.error("Debug error:", error);
+    res.status(500).json({ message: 'Debug error' });
+  }
+});
+
+
+
+//---------------------------------------------------------------
+
+
+// Main ETF API using EPFModel with Employer field as ETF contribution
+router.get('/getEtfModelData/:month/:year', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  const { month, year } = req.params;
+   
+  console.log("=== ETF Data Request (using EPFModel Employer field) ===");
+  console.log("Month:", month, "Year:", year);
+  
+  try {
+    // Validate parameters
+    const monthInt = parseInt(month);
+    const yearInt = parseInt(year);
+    
+    if (!monthInt || !yearInt || monthInt < 1 || monthInt > 12) {
+      return res.status(400).json({ message: 'Invalid month or year' });
+    }
+
+    // Create proper date range for the selected month/year
+    const startDate = new Date(yearInt, monthInt - 1, 1); // First day of month
+    const endDate = new Date(yearInt, monthInt, 0, 23, 59, 59, 999); // Last day of month
+    
+    console.log("Date range:", startDate.toISOString(), "to", endDate.toISOString());
+
+    // First, let's check what EPF data exists in the entire collection
+    const totalEpfCount = await EPFModel.countDocuments();
+    console.log("Total EPF records in database:", totalEpfCount);
+
+    // Check EPF data in the date range
+    const epfInDateRange = await EPFModel.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    }).lean();
+
+    console.log("EPF records in date range:", epfInDateRange.length);
+
+    // If no records in date range, return empty result
+    if (epfInDateRange.length === 0) {
+      return res.status(404).json({ 
+        message: `No ETF data found for ${getMonthName(monthInt)} ${yearInt}.`,
+        searchedRange: { startDate, endDate }
+      });
+    }
+
+    // Filter for records with Employer (ETF) contributions > 0
+    const etfRecords = epfInDateRange.filter(record => 
+      record.Employer && record.Employer > 0
+    );
+
+    console.log("EPF records with Employer (ETF) contributions:", etfRecords.length);
+    console.log("Sample EPF record for ETF:", etfRecords[0]);
+
+    if (etfRecords.length === 0) {
+      return res.status(404).json({ 
+        message: `ETF data found for ${getMonthName(monthInt)} ${yearInt}, but no records have Employer contributions.`,
+        totalRecordsInPeriod: epfInDateRange.length
+      });
+    }
+
+    // Extract unique UserIds (note: using UserId field from your EPF model)
+    const userIds = [...new Set(etfRecords
+      .map(record => record.UserId)
+      .filter(id => id && mongoose.Types.ObjectId.isValid(id))
+    )];
+
+    console.log("Unique UserIds found:", userIds.length);
+
+    // Fetch all users in one query
+    let users = [];
+    if (userIds.length > 0) {
+      users = await User.find({
+        _id: { $in: userIds }
+      }).lean();
+    }
+
+    console.log("Users fetched:", users.length);
+
+    // Create user lookup map
+    const userMap = {};
+    users.forEach(user => {
+      userMap[user._id.toString()] = user;
+    });
+
+    // Transform data with user information using Employer field as ETF
+    const transformedData = etfRecords.map(epfRecord => {
+      // Find user by UserId
+      const user = userMap[epfRecord.UserId?.toString()];
+
+      // Debug log for first record
+      if (epfRecord === etfRecords[0]) {
+        console.log("First EPF record for ETF details:", {
+          epfId: epfRecord._id,
+          UserId: epfRecord.UserId,
+          EmployeeId: epfRecord.EmployeeId,
+          Employer: epfRecord.Employer, // This becomes ETF
+          Employee: epfRecord.Employee,
+          userFound: !!user,
+          userName: user?.name
+        });
+      }
+
+      return {
+        _id: epfRecord._id,
+        employeeId: epfRecord.EmployeeId || user?.empId || 'N/A',
+        employeeName: user?.name || 'Name Not Found',
+        basicSalary: parseInt(user?.basicSal) || 0,
+        role: user?.role || 'Role Not Found',
+        ETF: epfRecord.Employer || 0, // Using Employer field as ETF contribution
+        createdAt: epfRecord.createdAt,
+        userId: user?._id || null,
+        userFound: !!user
+      };
+    });
+
+    console.log("Final transformed ETF data count:", transformedData.length);
+    console.log("Sample transformed ETF record:", transformedData[0]);
+
+    // Count records with and without user data
+    const withUserData = transformedData.filter(item => item.userFound);
+    const withoutUserData = transformedData.filter(item => !item.userFound);
+
+    console.log("Records with user data:", withUserData.length);
+    console.log("Records without user data:", withoutUserData.length);
+
+    res.status(200).json({ 
+      etfData: transformedData,
+      totalRecords: transformedData.length,
+      recordsWithUserData: withUserData.length,
+      recordsWithoutUserData: withoutUserData.length,
+      dateRange: { startDate, endDate },
+      month: getMonthName(monthInt),
+      year: yearInt
+    });
+
+  } catch (error) {
+    console.error("Error in getEtfModelData:", error);
+    res.status(500).json({ 
+      message: 'Internal Server Error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Server Error'
+    });
+  }
+});
+
+// Helper function to get month name
+function getMonthName(monthNumber) {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return months[monthNumber - 1] || 'Unknown';
+}
+
+// Alternative API using aggregation with EPFModel Employer field as ETF
+router.get('/getEtfModelDataAggregated/:month/:year', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  const { month, year } = req.params;
+  
+  try {
+    const monthInt = parseInt(month);
+    const yearInt = parseInt(year);
+    
+    // Create proper date range
+    const startDate = new Date(yearInt, monthInt - 1, 1);
+    const endDate = new Date(yearInt, monthInt, 0, 23, 59, 59, 999);
+
+    console.log("ETF Aggregation (using EPFModel) - Date range:", startDate.toISOString(), "to", endDate.toISOString());
+
+    const result = await EPFModel.aggregate([
+      // Match EPF records in date range with Employer (ETF) contributions
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          Employer: { $gt: 0 } // Using Employer field as ETF
+        }
+      },
+      // Convert UserId to ObjectId if it's a string
+      {
+        $addFields: {
+          userObjectId: {
+            $cond: {
+              if: { $type: "$UserId" },
+              then: { $toObjectId: "$UserId" },
+              else: "$UserId"
+            }
+          }
+        }
+      },
+      // Lookup user data using UserId field
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userObjectId',
+          foreignField: '_id',
+          as: 'userDetails'
+        }
+      },
+      // Get the first user from the array
+      {
+        $addFields: {
+          user: { $arrayElemAt: ["$userDetails", 0] }
+        }
+      },
+      // Project final structure with Employer field as ETF
+      {
+        $project: {
+          _id: 1,
+          employeeId: {
+            $ifNull: ["$EmployeeId", "$user.empId", "N/A"]
+          },
+          employeeName: {
+            $ifNull: ["$user.name", "Name Not Found"]
+          },
+          basicSalary: {
+            $cond: {
+              if: { $ne: ["$user.basicSal", null] },
+              then: { $toInt: "$user.basicSal" },
+              else: 0
+            }
+          },
+          role: {
+            $ifNull: ["$user.role", "Role Not Found"]
+          },
+          ETF: { $ifNull: ["$Employer", 0] }, // Using Employer field as ETF contribution
+          createdAt: 1,
+          userFound: { $ne: ["$user", null] }
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      }
+    ]);
+
+    console.log("ETF Aggregated result count (using EPFModel):", result.length);
+    if (result.length > 0) {
+      console.log("Sample ETF aggregated record (using EPFModel):", result[0]);
+    }
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        message: `No ETF data found for ${getMonthName(monthInt)} ${yearInt}.`
+      });
+    }
+
+    res.status(200).json({ 
+      etfData: result,
+      totalRecords: result.length,
+      recordsWithUserData: result.filter(item => item.userFound).length,
+      recordsWithoutUserData: result.filter(item => !item.userFound).length,
+      month: getMonthName(monthInt),
+      year: yearInt
+    });
+
+  } catch (error) {
+    console.error("ETF Aggregation error:", error);
+    res.status(500).json({ 
+      message: 'Internal Server Error',
+      error: error.message
+    });
+  }
+});
+
+// Debug endpoint to check what EPF data exists for ETF
+router.get('/debugEtfDates', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+  try {
+    // Get all EPF records with their dates (for ETF report)
+    const allRecords = await EPFModel.find({}, { 
+      createdAt: 1, 
+      UserId: 1, 
+      EmployeeId: 1, 
+      Employee: 1,
+      Employer: 1 // This becomes ETF
+    }).sort({ createdAt: -1 }).limit(20).lean();
+
+    // Group by month/year
+    const dateGroups = {};
+    allRecords.forEach(record => {
+      const date = new Date(record.createdAt);
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!dateGroups[monthYear]) {
+        dateGroups[monthYear] = [];
+      }
+      dateGroups[monthYear].push(record);
+    });
+
+    res.json({
+      totalRecords: await EPFModel.countDocuments(),
+      recentRecords: allRecords,
+      dateGroups: Object.keys(dateGroups).map(monthYear => ({
+        monthYear,
+        count: dateGroups[monthYear].length,
+        hasEmployer: dateGroups[monthYear].filter(r => r.Employer > 0).length, // Employer as ETF
+        hasEmployee: dateGroups[monthYear].filter(r => r.Employee > 0).length
+      }))
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Additional helper endpoint to check available ETF dates (using EPFModel)
+router.get('/getAvailableEtfDates', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  try {
+    const availableDates = await EPFModel.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          count: { $sum: 1 },
+          withETF: {
+            $sum: { $cond: [{ $gt: ["$Employer", 0] }, 1, 0] } // Employer as ETF
+          },
+          withEmployee: {
+            $sum: { $cond: [{ $gt: ["$Employee", 0] }, 1, 0] }
+          },
+          minDate: { $min: "$createdAt" },
+          maxDate: { $max: "$createdAt" }
+        }
+      },
+      {
+        $sort: { "_id.year": -1, "_id.month": -1 }
+      }
+    ]);
+    res.status(200).json({ availableDates });
+  } catch (error) {
+    console.error("Error getting available ETF dates:", error);
+    res.status(500).json({ message: 'Error fetching available ETF dates' });
+  }
+});
+
+// Debug endpoint to check EPF model structure for ETF usage
+router.get('/debugEtfModel', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+  try {
+    const sampleRecord = await EPFModel.findOne().lean();
+    const totalCount = await EPFModel.countDocuments();
+    const employerCount = await EPFModel.countDocuments({ Employer: { $gt: 0 } });
+    
+    res.status(200).json({
+      totalRecords: totalCount,
+      recordsWithEmployer: employerCount, // Records suitable for ETF
+      sampleRecord: sampleRecord,
+      modelFields: sampleRecord ? Object.keys(sampleRecord) : [],
+      note: "Using EPFModel with Employer field as ETF contribution"
+    });
+  } catch (error) {
+    console.error("Debug error:", error);
+    res.status(500).json({ message: 'Debug error' });
+  }
+});
+
+
+
+///
+
+
+// Route to get payroll data for all employees for a specific month and year
+router.get('/payroll/:year/:month', async (req, res) => {
+  console.log("Route called: /api/users/payroll");
+
+  try {
+    const { year, month } = req.params;
+
+    // Validate year and month
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month) - 1; // JS months: 0-based
+    if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 0 || monthNum > 11) {
+      return res.status(400).json({ error: 'Invalid year or month' });
+    }
+
+    // Sri Lanka time: UTC+5:30
+    const startDate = new Date(yearNum, monthNum, 1, 5, 30);
+    const endDate = new Date(yearNum, monthNum + 1, 0, 5, 30, 59, 999);
+
+    // Fetch data
+    const users = await User.find();
+
+    const payments = await Payments.find({
+      updatedAt: { $gte: startDate, $lte: endDate },
+      states: "true"
+    });
+
+    console.log(`payments are ${payments}`);
+
+    const epfData = await EPFModel.find();
+    const attendance = await Attendance.find({
+      date: { $gte: startDate, $lte: endDate }
+    });
+
+    const daysInMonth = endDate.getDate();
+
+    const payrollData = [];
+    let totalNetSalary = 0,
+        totalEmployeeEPF = 0,
+        totalEmployerEPF = 0,
+        totalEmployeeETF = 0,
+        totalAllowance = 0,
+        totalServiceCharge = 0,
+        totalNoPayAmount = 0,
+        totalBasicSalary = 0;
+
+    for (const user of users) {
+
+      //console.log(`Processing user: ${user.name} (${user._id})`);
+      console.log(`payments: ${payments}`);
+      // Match payment for this user
+      const userPayment = payments.find(
+        p => p.userId && user._id && p.userId.toString() === user._id.toString()
+      );
+
+      const allowance = userPayment ? Number(userPayment.allowance) || 0 : 0;
+      const serviceCharge = userPayment ? Number(userPayment.serviceCharge) || 0 : 0;
+
+      // Match EPF for this user
+      const userEPF = epfData.find(
+        e => e.UserId && e.UserId.toString() === user._id.toString()
+      );
+      const employeeEPF = userEPF ? Number(userEPF.Employee) || 0 : 0;
+      const employerEPF = userEPF ? Number(userEPF.Employer) || 0 : 0;
+      const employeeETF = userEPF ? Number(userEPF.Employee) || 0 : 0;
+
+      // Attendance
+      const userAttendance = attendance.filter(
+        a => a.userId && a.userId.toString() === user._id.toString()
+      );
+      const presentDays = userAttendance.filter(a => a.status === 'Present').length;
+      const noPayDays = daysInMonth - presentDays;
+
+      const basicSalary = Number(user.basicSal) || 0;
+      const dailyRate = daysInMonth > 0 ? basicSalary / daysInMonth : 0;
+      const noPayAmount = noPayDays * dailyRate;
+
+      const totalEarnings = basicSalary + allowance + serviceCharge;
+
+      const calculatedEmployeeEPF = employeeEPF || basicSalary * 0.08;
+      const calculatedEmployerEPF = employerEPF || basicSalary * 0.12;
+      const calculatedEmployeeETF = employeeETF || basicSalary * 0.03;
+
+      const netSalary = totalEarnings - noPayAmount - calculatedEmployeeEPF;
+
+      payrollData.push({
+        empId: user.CorrectuserId || 'N/A',
+        empName: user.name || 'Unknown',
+        jobRole: user.role || 'N/A',
+        empType: user.empType || 'N/A',
+        basicSalary,
+        allowance,
+        serviceCharge,
+        noPay: noPayAmount,
+        employeeEPF: calculatedEmployeeEPF,
+        employerEPF: calculatedEmployerEPF,
+        employeeETF: calculatedEmployeeETF,
+        netSalary
+      });
+
+      // Totals
+      totalBasicSalary += basicSalary;
+      totalNetSalary += netSalary;
+      totalEmployeeEPF += calculatedEmployeeEPF;
+      totalEmployerEPF += calculatedEmployerEPF;
+      totalEmployeeETF += calculatedEmployeeETF;
+      totalAllowance += allowance;
+      totalServiceCharge += serviceCharge;
+      totalNoPayAmount += noPayAmount;
+    }
+
+    // Final response
+    res.json({
+      payroll: payrollData,
+      summations: {
+        totalBasicSalary,
+        totalNetSalary,
+        totalEmployeeEPF,
+        totalEmployerEPF,
+        totalEmployeeETF,
+        totalAllowance,
+        totalServiceCharge,
+        totalNoPayAmount
+      }
+    });
+
+  } catch (error) {
+    console.error('Payroll Error:', error.message, error.stack);
+    res.status(500).json({ error: `Server error: ${error.message}` });
+  }
+});
+
+
+
+//////////////
+
+router.get('/leaves/:year/:month', async (req, res) => {
+  try {
+    // Extract year and month from URL parameters
+    const { year, month } = req.params;
+
+    // Validate year and month
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month);
+
+    if (isNaN(yearNum) || isNaN(monthNum)) {
+      return res.status(400).json({ error: 'Year and month must be valid numbers' });
+    }
+
+    if (monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({ error: 'Month must be between 1 and 12' });
+    }
+
+    if (yearNum < 2000 || yearNum > new Date().getFullYear() + 1) {
+      return res.status(400).json({ error: 'Year must be between 2000 and next year' });
+    }
+
+    // Convert month and year to date range for filtering
+    const startDate = new Date(yearNum, monthNum - 1, 1); // First day of the month
+    const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999); // Last millisecond of the month
+
+    console.log('Date Range:', { startDate, endDate });
+
+    // Debugging: Check collection data
+    const leaveDataCount = await LeaveData.countDocuments({
+      $and: [
+        {
+          LeaveStartDate: {
+            $gte: startDate,
+          },
+        },
+        {
+          LeaveEndDate: {
+            $lte: endDate,
+          },
+        },
+      ],
+    });
+
+    console.log('LeaveData Count:', leaveDataCount);
+
+    // Debugging: Sample data from LeaveData
+    const sampleLeave = await LeaveData.findOne({
+      $and: [
+        {
+          LeaveStartDate: {
+            $gte: startDate,
+          },
+        },
+        {
+          LeaveEndDate: {
+            $lte: endDate,
+          },
+        },
+      ],
+    });
+
+    console.log('Sample LeaveData:', sampleLeave);
+
+    // Debugging: Distinct CorrectuserIds
+    const distinctCorrectuserIds = await LeaveData.distinct('CorrectuserId', {
+      $and: [
+        {
+          LeaveStartDate: {
+            $gte: startDate,
+          },
+        },
+        {
+          LeaveEndDate: {
+            $lte: endDate,
+          },
+        },
+      ],
+    });
+    console.log('Distinct CorrectuserIds:', distinctCorrectuserIds);
+
+    // Aggregation 1: Group by CorrectuserId, count leaves, include role
+    const leaveSummary = await LeaveData.aggregate([
+      // Step 1: Filter by date range
+      {
+        $match: {
+          $expr: {
+            $and: [
+              {
+                $gte: [
+                  { $dateFromString: { dateString: '$LeaveStartDate', onError: '$LeaveStartDate' } },
+                  startDate,
+                ],
+              },
+              {
+                $lte: [
+                  { $dateFromString: { dateString: '$LeaveEndDate', onError: '$LeaveEndDate' } },
+                  endDate,
+                ],
+              },
+            ],
+          },
+        },
+      },
+      // Step 2: Group by CorrectuserId, count leaves, include role and name
+      {
+        $group: {
+          _id: '$CorrectuserId',
+          role: { $first: '$Role' },
+          name: { $first: '$Name' },
+          count: { $sum: 1 },
+        },
+      },
+      // Step 3: Project desired fields
+      {
+        $project: {
+          CorrectuserId: '$_id',
+          role: 1,
+          name: 1,
+          count: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+    // Aggregation 2: Find max and min leave counts
+    const maxMinLeaves = await LeaveData.aggregate([
+      // Step 1: Filter by date range
+      {
+        $match: {
+          $expr: {
+            $and: [
+              {
+                $gte: [
+                  { $dateFromString: { dateString: '$LeaveStartDate', onError: '$LeaveStartDate' } },
+                  startDate,
+                ],
+              },
+              {
+                $lte: [
+                  { $dateFromString: { dateString: '$LeaveEndDate', onError: '$LeaveEndDate' } },
+                  endDate,
+                ],
+              },
+            ],
+          },
+        },
+      },
+      // Step 2: Group by CorrectuserId to count leaves
+      {
+        $group: {
+          _id: '$CorrectuserId',
+          name: { $first: '$Name' },
+          count: { $sum: 1 },
+        },
+      },
+      // Step 3: Sort by count to find max and min
+      {
+        $sort: {
+          count: -1, // Descending for max
+        },
+      },
+      // Step 4: Project max and min in one document
+      {
+        $group: {
+          _id: null,
+          maxLeaves: { $first: { CorrectuserId: '$_id', name: '$name', count: '$count' } },
+          minLeaves: { $last: { CorrectuserId: '$_id', name: '$name', count: '$count' } },
+        },
+      },
+      // Step 5: Project final fields
+      {
+        $project: {
+          _id: 0,
+          maxLeavesCorrectuserId: '$maxLeaves.CorrectuserId',
+          maxLeavesName: '$maxLeaves.name',
+          maxLeavesCount: '$maxLeaves.count',
+          minLeavesCorrectuserId: '$minLeaves.CorrectuserId',
+          minLeavesName: '$minLeaves.name',
+          minLeavesCount: '$minLeaves.count',
+        },
+      },
+    ]);
+
+    console.log('Leave Summary:', leaveSummary);
+    console.log('Max/Min Leaves:', maxMinLeaves);
+
+    // Combine results
+    const response = {
+      success: true,
+      data: {
+        leaveSummary: leaveSummary,
+        maxLeaves: maxMinLeaves[0]?.maxLeavesCorrectuserId
+          ? {
+              CorrectuserId: maxMinLeaves[0].maxLeavesCorrectuserId,
+              name: maxMinLeaves[0].maxLeavesName,
+              count: maxMinLeaves[0].maxLeavesCount,
+            }
+          : null,
+        minLeaves: maxMinLeaves[0]?.minLeavesCorrectuserId
+          ? {
+              CorrectuserId: maxMinLeaves[0].minLeavesCorrectuserId,
+              name: maxMinLeaves[0].minLeavesName,
+              count: maxMinLeaves[0].minLeavesCount,
+            }
+          : null,
+      },
+    };
+
+    // Return the result
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error in leave aggregation:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message,
+    });
+  }
+});
+
+
+// Description: Get advance payment report with CorrectuserId, Name, Role, Salary, and total salary
+router.get('/advances/:year/:month', async (req, res) => {
+  try {
+    // Extract year and month from URL parameters
+    const { year, month } = req.params;
+
+    // Validate year and month
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month);
+
+    if (isNaN(yearNum) || isNaN(monthNum)) {
+      return res.status(400).json({ error: 'Year and month must be valid numbers' });
+    }
+
+    if (monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({ error: 'Month must be between 1 and 12' });
+    }
+
+    if (yearNum < 2000 || yearNum > new Date().getFullYear() + 1) {
+      return res.status(400).json({ error: 'Year must be between 2000 and next year' });
+    }
+
+    // Convert month and year to date range for filtering
+    const startDate = new Date(yearNum, monthNum - 1, 1); // First day of the month
+    const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999); // Last millisecond of the month
+
+    console.log('Date Range:', { startDate, endDate });
+
+    // Debugging: Check collection data
+    const userCount = await User.countDocuments();
+    const middleSalCount = await MiddleSal.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
+    console.log('Collection Counts:', { userCount, middleSalCount });
+
+    // Debugging: Sample data
+    const sampleMiddleSal = await MiddleSal.findOne({
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+    console.log('Sample MiddleSal:', sampleMiddleSal);
+
+    // Debugging: Distinct Uids
+    const distinctUids = await MiddleSal.distinct('Uid', {
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+    console.log('Distinct Uids:', distinctUids);
+
+    // Aggregation: Join MiddleSal and User, filter by date, sum salaries
+    const result = await MiddleSal.aggregate([
+      // Step 1: Filter by date range
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      // Step 2: Lookup User records
+      {
+        $lookup: {
+          from: 'users', // Adjust to your actual collection name
+          let: { uid: '$Uid' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [{ $toString: '$_id' }, '$$uid'], // Convert User._id to string
+                },
+              },
+            },
+            {
+              $project: {
+                CorrectuserId: 1,
+              },
+            },
+          ],
+          as: 'userData',
+        },
+      },
+      // Step 3: Unwind userData
+      {
+        $unwind: {
+          path: '$userData',
+          preserveNullAndEmptyArrays: true, // Keep MiddleSal records even if no User match
+        },
+      },
+      // Step 4: Project desired fields
+      {
+        $project: {
+          CorrectuserId: { $ifNull: ['$userData.CorrectuserId', 'Unknown'] },
+          Name: 1,
+          Role: 1,
+          Salary: { $toDouble: '$Salary' }, // Convert string Salary to number
+        },
+      },
+      // Step 5: Group to collect records and sum salaries
+      {
+        $group: {
+          _id: null,
+          advances: {
+            $push: {
+              CorrectuserId: '$CorrectuserId',
+              Name: '$Name',
+              Role: '$Role',
+              Salary: '$Salary',
+            },
+          },
+          totalSalary: { $sum: '$Salary' },
+        },
+      },
+      // Step 6: Project final output
+      {
+        $project: {
+          _id: 0,
+          advances: 1,
+          totalSalary: 1,
+        },
+      },
+    ]);
+
+    console.log('Aggregation Result:', result);
+
+    // Return the result
+    res.status(200).json({
+      success: true,
+      data: result[0] || { advances: [], totalSalary: 0 },
+    });
+  } catch (error) {
+    console.error('Error in advance payment aggregation:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message,
+    });
+  }
+});
+
+
+// Helper function to generate random outTime between 11:00 PM and 11:30 PM UTC
+const generateRandomOutTime = (createdAt) => {
+  const date = new Date(createdAt);
+  // Set time to random between 11:00:00 PM and 11:30:00 PM UTC
+  const minutes = Math.floor(Math.random() * 31); // 0 to 30 minutes
+  const seconds = Math.floor(Math.random() * 60); // 0 to 59 seconds
+  date.setUTCHours(23, minutes, seconds, 0); // 11:XX:XX PM UTC
+  const hours = date.getUTCHours();
+  const minutesStr = minutes.toString().padStart(2, '0');
+  const secondsStr = seconds.toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 || 12; // Convert to 12-hour format
+  return `${hours12}:${minutesStr}:${secondsStr} ${ampm}`;
+};
+
+// Route: GET /api/users/attendance/:year/:month/:userId
+// Description: Get attendance report for a specific user, year, and month
+router.get('/attendance/:year/:month/:userId', async (req, res) => {
+  try {
+    // Extract year, month, and userId from URL parameters
+    const { year, month, userId } = req.params;
+
+    // Validate year, month, and userId
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month);
+
+    if (isNaN(yearNum) || isNaN(monthNum)) {
+      return res.status(400).json({ error: 'Year and month must be valid numbers' });
+    }
+
+    if (monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({ error: 'Month must be between 1 and 12' });
+    }
+
+    if (yearNum < 2000 || yearNum > new Date().getFullYear() + 1) {
+      return res.status(400).json({ error: 'Year must be between 2000 and next year' });
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: 'UserId is required' });
+    }
+
+    // Convert month and year to date range for filtering
+    const startDate = new Date(yearNum, monthNum - 1, 1); // First day of the month
+    const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999); // Last millisecond of the month
+
+    console.log('Parameters:', { year, month, userId });
+    console.log('Date Range:', { startDate, endDate });
+
+    // Find User by CorrectuserId to get _id
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).json({ error: `User with CorrectuserId ${userId} not found` });
+    }
+    const userIdString = user._id.toString();
+
+    console.log('Found User:', { CorrectuserId: user.CorrectuserId, _id: userIdString });
+
+    // Debugging: Check Attendance data for the user
+    const attendanceCount = await Attendance.countDocuments({
+      userId: userIdString,
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+    console.log('Attendance Count for User:', attendanceCount);
+
+    // Debugging: Sample Attendance data
+    const sampleAttendance = await Attendance.findOne({
+      userId: userIdString,
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+    console.log('Sample Attendance:', sampleAttendance);
+
+    // Aggregation: Filter Attendance by userId and createdAt, join with User
+    const result = await Attendance.aggregate([
+      // Step 1: Filter by userId and createdAt range
+      {
+        $match: {
+          userId: userIdString,
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      // Step 2: Lookup User records
+      {
+        $lookup: {
+          from: 'users', // Adjust to your actual collection name
+          let: { userId: '$userId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [{ $toString: '$_id' }, '$$userId'],
+                },
+              },
+            },
+            {
+              $project: {
+                CorrectuserId: 1,
+              },
+            },
+          ],
+          as: 'userData',
+        },
+      },
+      // Step 3: Unwind userData
+      {
+        $unwind: {
+          path: '$userData',
+          preserveNullAndEmptyArrays: true, // Keep Attendance records if no User match
+        },
+      },
+      // Step 4: Project desired fields
+      {
+        $project: {
+          CorrectuserId: { $ifNull: ['$userData.CorrectuserId', 'Unknown'] },
+          name: 1,
+          createdAt: 1,
+          status: 1,
+        },
+      },
+      // Step 5: Sort by createdAt
+      {
+        $sort: {
+          createdAt: 1,
+        },
+      },
+    ]);
+
+    // Add outTime to each record
+    const resultWithOutTime = result.map((record) => ({
+      ...record,
+      outTime: generateRandomOutTime(record.createdAt),
+    }));
+
+    console.log('Aggregation Result with outTime:', resultWithOutTime);
+
+    // Return the result
+    res.status(200).json({
+      success: true,
+      data: resultWithOutTime,
+    });
+  } catch (error) {
+    console.error('Error in attendance aggregation:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message,
+    });
+  }
+});
+
 
 
 

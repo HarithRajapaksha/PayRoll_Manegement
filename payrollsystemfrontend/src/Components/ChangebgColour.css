@@ -1,0 +1,6 @@
+/* AdminHolidayRequestHandle.css */
+.page-bg {
+  background: linear-gradient(135deg, #0d0d0e 0%, #353434 100%);
+  min-height: 100vh;           /* full height */
+  padding: 2rem 0;  
+}

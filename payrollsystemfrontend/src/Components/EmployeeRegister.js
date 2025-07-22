@@ -3,6 +3,7 @@ import { Form, Button, Container, Row, Col } from 'react-bootstrap';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import './ChangebgColour.css'; 
 
 const bankList = {
   "Sampath Bank": ["Colombo", "Kandy", "Galle"],
@@ -88,12 +89,15 @@ function BasicExample() {
     try {
       await axios.post('http://localhost:3006/api/auth/register', data);
       await axios.put('http://localhost:3006/api/users/ChangeUserIdData', {
-        userId: data.CorrectuserId
+        userId: String(parseInt(data.CorrectuserId, 10) ).padStart(3, '0')
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
+     const userId = String(parseInt(data.CorrectuserId, 10)).padStart(3, '0');
+
       Swal.fire('Success!', 'Employee registered successfully', 'success').then(() =>
-        navigate(`/UserId/${data.userName}`)
+        navigate(`/UserId/${userId}`)
       );
     } catch (err) {
       Swal.fire('Error', err.response?.data?.message || 'Registration failed', 'error');
@@ -101,6 +105,7 @@ function BasicExample() {
   };
 
   return (
+    <div className="page-bg">
     <Container className="py-5">
       <div className="bg-white shadow rounded p-5">
         <h2 className="text-center mb-4 text-primary">Employee Registration</h2>
@@ -274,6 +279,7 @@ function BasicExample() {
         </Form>
       </div>
     </Container>
+    </div>
   );
 }
 

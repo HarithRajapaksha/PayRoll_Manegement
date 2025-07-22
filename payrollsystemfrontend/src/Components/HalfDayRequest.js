@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Table, Form } from 'react-bootstrap'; // Import Modal and Button from Bootstrap
 import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
+import './ChangebgColour.css'; // Import custom CSS for background color
 
 const HalfDayRequest = () => {
   const [holidayData, setHolidayData] = useState([]); // To store half-day requests
@@ -93,6 +94,7 @@ const HalfDayRequest = () => {
   };
 
   return (
+    <div className="page-bg">
     <div className="container mt-4">
       <h2 className="mb-4 text-center">HALF-DAY Request Handle</h2>
       <Table striped bordered hover responsive>
@@ -162,6 +164,7 @@ const HalfDayRequest = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+    </div>
     </div>
   );
 };

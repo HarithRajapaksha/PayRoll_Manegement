@@ -27,6 +27,15 @@ import AdminAllUsersSalData from "./Components/AdminGetAllUsersPaySlips.js";
 import UserManagement from "./Components/UserManagement.js";
 import ServiceChargeHandle from "./Components/ServiceChargeHandle.js";
 import ETF_Payment from "./Components/ETF_Payment.js";
+import EpfPayment from "./Components/EpfPayment.js";
+import AllEmployeesIdData from "./Components/AllemployeesIdData.js";
+import EmployeeHomePage from "./Components/EmployeeHomePage.js";
+import EpfPaymnetsDes from "./Components/EpfPaymnetsDes.js";
+import EtfPaymentsDes from "./Components/ETFPaymentDes.js";
+import AllNetSalary from "./Components/AllNetSalary.js";
+import LeaveSummery from "./Components/LeaveSummery.js";
+import AdancePaymentReport from "./Components/AdancePaymentReport.js";
+import AttendanceReport from "./Components/AttendenceReport.js";
 
 import { jwtDecode } from "jwt-decode";
 
@@ -37,11 +46,12 @@ function AppNavbar() {
 
   const token = localStorage.getItem('token');
   let userRole = null;
+  console.log('Token:', token);
 
   try {
     if (token) {
       userRole = jwtDecode(token);
-      console.log('User Role:', userRole.role);
+      console.log('User Role:', userRole);
     }
   } catch (error) {
     console.error('Invalid token:', error);
@@ -86,6 +96,16 @@ function App() {
         <Route path="/UserManagement" element={<UserManagement />} />
         <Route path="/ServiceChargeHandle" element={<ServiceChargeHandle />} />
         <Route path="/ETF_Payment" element={<ETF_Payment />} />
+        <Route path="/EpfPayment" element={<EpfPayment />} />
+        <Route path="/AllEmployeesIdData" element={<AllEmployeesIdData />} />
+        <Route path="/EmployeeHomePage" element={<EmployeeHomePage />} />
+        <Route path="/EpfPaymnetsDes" element={<EpfPaymnetsDes />} />
+        <Route path="/ETFPaymentsDes" element={<EtfPaymentsDes />} />
+        <Route path="/AllNetSalary" element={<AllNetSalary />} />
+        <Route path="/LeaveSummery" element={<LeaveSummery />} />
+        <Route path="/AdancePaymentReport" element={<AdancePaymentReport />} />
+        <Route path="/AttendanceReport" element={<AttendanceReport />} />
+        
       </Routes>
     </Router>
   );

@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Chart } from 'react-google-charts'; // Import Google Charts
 import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
+import './ChangebgColour.css'; 
 
 const AdvancePayment = () => {
   const [notApprovedLeaveData, setNotApprovedLeaveData] = useState([]); // To store leave data for the chart
@@ -116,6 +117,7 @@ const AdvancePayment = () => {
   };
 
   return (
+    <div className="page-bg">
     <div className="container" style={{ marginTop: '40px' }}>
       {/* Title */}
       <h2 className="text-center mb-4">Advance Payment Comparison - {currentMonth} {currentYear}</h2>
@@ -165,6 +167,7 @@ const AdvancePayment = () => {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 };

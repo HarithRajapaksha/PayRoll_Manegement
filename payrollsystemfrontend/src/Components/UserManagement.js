@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './ChangebgColour.css'; 
 
 const rolesList = [
   'Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor', 'Waiter', 'Helper'
@@ -153,6 +154,7 @@ const UserManagement = () => {
   };
 
   return (
+    <div className="page-bg">
     <div className="min-vh-100 bg-light" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div className="container py-5">
         {/* Header */}
@@ -533,6 +535,7 @@ const UserManagement = () => {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

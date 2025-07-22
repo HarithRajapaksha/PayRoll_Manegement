@@ -4,6 +4,7 @@ import { Form, Button, Card, Row, Col, Container } from 'react-bootstrap';
 import { jwtDecode } from 'jwt-decode';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import './ChangebgColour.css'; 
 
 function GetTheAllUsersSalDat() {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -52,6 +53,7 @@ function GetTheAllUsersSalDat() {
   };
 
   return (
+    <div className="page-bg">
     <Container className="mt-5">
       <h3 className="text-center mb-4">Get Salary Payment Slip</h3>
 
@@ -126,9 +128,10 @@ function GetTheAllUsersSalDat() {
           </div>
         </>
       ):( <div className="text-center mt-4">
-        <p className="text-muted">No salary data found. Please select a user, year, and month.</p>
+        <p className="text-muted">No salary data found. Please select an employee, year, and month.</p>
       </div>)}
     </Container>
+    </div>
   );
 }
 

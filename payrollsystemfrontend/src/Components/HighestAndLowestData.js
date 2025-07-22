@@ -58,6 +58,8 @@ const AttendanceBarChart = () => {
     fetchNoPayData();
 
     // Fetch all users attendance and no pay data for current month and year
+
+    console.log('Fetching all users attendance and no pay data for:', currentYear, currentMonth);
     const fetchAllUsersData = async () => {
       try {
         const response = await axios.get(`http://localhost:3006/api/users/getAllUsersAttendanceNoPay/${currentYear}/${currentMonth}`, {

@@ -4,6 +4,7 @@ import JsBarcode from "jsbarcode";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { useParams } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 const FetchUserWithAxios = () => {
   const [userData, setUserData] = useState(null);
@@ -13,10 +14,15 @@ const FetchUserWithAxios = () => {
 
   const { userId } = useParams();
 
+       const token = localStorage.getItem("token");
+        const decodedToken = jwtDecode(token);
+        console.log("Decoded Token:", decodedToken.id);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
+   
+
         const response = await axios.get(
           `http://localhost:3006/api/users/admin/${userId}`,
           {
@@ -27,6 +33,7 @@ const FetchUserWithAxios = () => {
           }
         );
         setUserData(response.data);
+        console.log("User Data:", response.data);
       } catch (error) {
         setError(error.response ? error.response.data.message : error.message);
       }

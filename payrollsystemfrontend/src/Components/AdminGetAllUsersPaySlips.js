@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Form, Button, Card, Row, Col, Container } from 'react-bootstrap';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import './ChangebgColour.css'; // Import custom CSS for background color
 
 function AdminSalaryViewer() {
   const [users, setUsers] = useState([]);
@@ -181,6 +182,7 @@ function AdminSalaryViewer() {
   };
 
   return (
+    <div className="page-bg">
     <Container className="mt-5">
       <h3 className="text-center mb-4">Employee Payslip Viewer</h3>
 
@@ -245,7 +247,7 @@ function AdminSalaryViewer() {
             {/* Company Header */}
             <div style={payslipStyles.header}>
               <div style={payslipStyles.companyName}>
-                THE CARNIVO RESTAURANT
+                THE KARNIVORE RESTAURANT
               </div>
               <div style={payslipStyles.payslipTitle}>
                 PAYSLIP
@@ -329,6 +331,25 @@ function AdminSalaryViewer() {
                   </tr>
                 </tbody>
               </table>
+
+              <table style={payslipStyles.salaryTable}>
+                <thead>
+                  <tr>
+                    <th style={payslipStyles.tableHeader}>EMPLOYER CONTRIBUTIONS</th>
+                    <th style={payslipStyles.tableHeader}>AMOUNT (Rs.)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>Employer Contribution (12%)</td>
+                    <td style={payslipStyles.tableCell}>{(Number(salaryData.BasicSal) * 0.12).toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style={payslipStyles.tableCell}>ETF</td>
+                    <td style={payslipStyles.tableCell}>{Number(salaryData.ETF).toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             {/* Net Salary */}
@@ -351,10 +372,11 @@ function AdminSalaryViewer() {
         </>
       ) : (
         <div className="text-center mt-4">
-          <p className="text-muted">No salary data found. Please select a user, year, and month.</p>
+          <p className="text-muted">No salary data found. Please select an employee, year, and month.</p>
         </div>
       )}
     </Container>
+    </div>
   );
 }
 

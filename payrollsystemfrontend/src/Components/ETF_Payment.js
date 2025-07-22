@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import './ChangebgColour.css'; // Import custom CSS for background color
 
 function ETF_Payment() {
   const [employees, setEmployees] = useState([]);
@@ -127,8 +128,9 @@ function ETF_Payment() {
   ];
 
   return (
+    <div className="page-bg">
     <div className="container mt-5">
-      <h2 className="text-center mb-4 fw-bold text-primary">ETF Payment Portal</h2>
+      <h2 className="text-center mb-4 fw-bold text-primary">ETF Payment Management</h2>
 
       <div className="card shadow-lg p-4 mb-4">
         <div className="mb-3">
@@ -204,6 +206,7 @@ function ETF_Payment() {
           </p>
         </div>
       )}
+    </div>
     </div>
   );
 }

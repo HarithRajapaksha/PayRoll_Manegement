@@ -1,102 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function NavBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsOpen(false);
+        setActiveDropdown(null);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setIsOpen(false);
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleMobile = () => setIsOpen(!isOpen);
-  
   const toggleDropdown = (dropdown) => {
     setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
   };
 
   const navStyle = {
-    background: 'linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%)',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+    background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
     padding: '0',
-    margin: '0',
-    fontFamily: 'system-ui, -apple-system, sans-serif'
+    fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
+    position: 'sticky',
+    top: 0,
+    zIndex: 1000,
+    backdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   };
 
   const containerStyle = {
-    maxWidth: '1200px',
+    maxWidth: '1400px',
     margin: '0 auto',
-    padding: '0 20px'
+    padding: '0 20px',
   };
 
   const headerStyle = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: '70px'
+    height: '80px',
   };
 
   const logoContainerStyle = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    textDecoration: 'none'
+    textDecoration: 'none',
+    transition: 'transform 0.3s ease',
   };
 
   const logoIconStyle = {
-    width: '45px',
-    height: '45px',
+    width: '50px',
+    height: '50px',
     background: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)',
-    borderRadius: '10px',
+    borderRadius: '12px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)',
-    color: 'white',
-    fontSize: '20px',
-    fontWeight: 'bold'
+    boxShadow: '0 6px 20px rgba(239, 68, 68, 0.4)',
+    color: '#ffffff',
+    fontSize: '24px',
+    fontWeight: '700',
+    transition: 'all 0.3s ease',
   };
 
   const logoTextStyle = {
-    fontSize: '28px',
-    fontWeight: 'bold',
+    fontSize: '30px',
+    fontWeight: '800',
     background: 'linear-gradient(90deg, #ef4444 0%, #ec4899 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text'
+    backgroundClip: 'text',
+    letterSpacing: '-0.5px',
   };
 
-  const desktopNavStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px',
-    '@media (max-width: 768px)': {
-      display: 'none'
-    }
-  };
-
-  const navLinkStyle = {
+  const hamburgerStyle = {
     color: '#ffffff',
-    textDecoration: 'none',
-    padding: '10px 15px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '10px',
     borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
     transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    border: 'none',
-    background: 'none',
     display: 'flex',
     alignItems: 'center',
-    gap: '5px'
-  };
-
-  const mobileButtonStyle = {
-    display: 'none',
-    color: '#ffffff',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '8px',
-    borderRadius: '6px',
-    '@media (max-width: 768px)': {
-      display: 'block'
-    }
+    justifyContent: 'center',
   };
 
   const dropdownStyle = {
@@ -104,42 +115,49 @@ function NavBar() {
     right: '0',
     top: '100%',
     marginTop: '8px',
-    width: '250px',
-    background: 'rgba(30, 30, 30, 0.95)',
+    width: '300px',
+    background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)',
     borderRadius: '12px',
-    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
-    border: '1px solid rgba(55, 65, 81, 0.5)',
-    zIndex: '50',
-    padding: '8px'
+    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    zIndex: '1000',
+    padding: '10px',
+    backdropFilter: 'blur(12px)',
+    maxHeight: '80vh',
+    overflowY: 'auto',
+    opacity: isOpen ? 1 : 0,
+    transform: isOpen ? 'translateY(0)' : 'translateY(-10px)',
+    transition: 'all 0.3s ease',
   };
 
-  const dropdownLinkStyle = {
-    display: 'block',
-    padding: '12px 16px',
-    fontSize: '14px',
-    color: '#d1d5db',
+  const navLinkStyle = {
+    color: '#e2e8f0',
     textDecoration: 'none',
-    borderRadius: '8px',
-    transition: 'all 0.2s ease'
-  };
-
-  const mobileMenuStyle = {
-    background: 'rgba(17, 24, 39, 0.95)',
-    borderTop: '1px solid rgba(55, 65, 81, 0.5)',
-    padding: '16px 8px',
-    maxHeight: '400px',
-    overflowY: 'auto'
-  };
-
-  const mobileLinkStyle = {
-    display: 'block',
     padding: '12px 16px',
-    fontSize: '16px',
-    color: '#ffffff',
-    textDecoration: 'none',
     borderRadius: '8px',
-    transition: 'all 0.2s ease',
-    marginBottom: '4px'
+    fontSize: '15px',
+    fontWeight: '600',
+    transition: 'all 0.3s ease',
+    background: 'rgba(255, 255, 255, 0.06)',
+    margin: '4px 0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    whiteSpace: 'nowrap',
+  };
+
+  const dropdownButtonStyle = {
+    ...navLinkStyle,
+    cursor: 'pointer',
+    background: 'rgba(239, 68, 68, 0.1)',
+    border: '1px solid rgba(239, 68, 68, 0.2)',
+    width: '100%',
+    textAlign: 'left',
+  };
+
+  const subDropdownStyle = {
+    marginLeft: '20px',
+    paddingTop: '8px',
   };
 
   return (
@@ -147,317 +165,230 @@ function NavBar() {
       <div style={containerStyle}>
         <div style={headerStyle}>
           {/* Logo */}
-          <a href="#" style={logoContainerStyle}>
-          
+          <a
+            href="#"
+            style={logoContainerStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              const icon = e.currentTarget.querySelector('div');
+              if (icon) icon.style.transform = 'rotate(5deg)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              const icon = e.currentTarget.querySelector('div');
+              if (icon) icon.style.transform = 'rotate(0deg)';
+            }}
+          >
+            <div style={logoIconStyle}>HR</div>
+            <span style={logoTextStyle}>THE KARNIVORE</span>
           </a>
 
-          {/* Desktop Navigation */}
-          <div style={{...desktopNavStyle, display: window.innerWidth >= 768 ? 'flex' : 'none'}}>
-            <a href="#" style={navLinkStyle} 
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Home
-            </a>
-            <a href="/HolidayHandle-Admin" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Full Leave
-            </a>
-            <a href="/EmpRegister" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Employee Registration
-            </a>
-            <a href="/MonthlyMidSalary" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Halfday Request
-            </a>
-            <a href="/AdvancePayment" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Advance Payment
-            </a>
-            <a href="/UserManagement" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Edit Details
-            </a>
-            <a href="/HalfDayRequests" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Half Day
-            </a>
-            <a href="/BarcodeData" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Attendance
-            </a>
-            <a href="/AllowanceHandle" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Allowances
-            </a>
+          {/* Hamburger Menu Button */}
+          <button
+            onClick={toggleMobile}
+            style={hamburgerStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <svg style={{ height: '24px', width: '24px' }} stroke="currentColor" fill="none" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </div>
 
-                <a href="/ETF_Payment" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              ETF payment
-            </a>
-
-
-            <a href="/ServiceChargeHandle" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              ServiceCharge
-            </a>
-
-            <a href="/EpfApplication" style={navLinkStyle}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              EPF/ETF
-            </a>
+        {/* Dropdown Menu */}
+        {isOpen && (
+          <div style={dropdownStyle} className="dropdown-container">
+            {/* Main Navigation Items */}
+            {[
+              { href: '/EmployeeHomePage', label: 'Home' },
+              { href: '/BarcodeData', label: 'Attendece Read' },
+              { href: '/HolidayHandle-Admin', label: 'Full Leave' },
+              { href: '/EmpRegister', label: 'Employee Registration' },
+              { href: '/MonthlyMidSalary', label: 'Advance Payment Handle' },
+              { href: '/AdvancePayment', label: 'Advance Payment' },
+              { href: '/UserManagement', label: 'Edit Details' },
+              { href: '/HalfDayRequests', label: 'Half Day' },
+              { href: '/AllowanceHandle', label: 'Allowances' },
+              { href: '/ETF_Payment', label: 'ETF Payment' },
+              { href: '/ServiceChargeHandle', label: 'Service Charge' },
+              { href: '/AllEmployeesIdData', label: 'Employee ID' },
+              { href: '/EpfPayment', label: 'EPF Payment' },
+              { href: '/', label: 'Logout' }, 
+            ].map(item => (
+              <a
+                key={item.href}
+                href={item.href}
+                style={navLinkStyle}
+                target={item.target || undefined}
+                rel={item.rel || undefined}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)';
+                  e.currentTarget.style.color = '#f87171';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.color = '#e2e8f0';
+                }}
+              >
+                {item.label}
+              </a>
+            ))}
 
             {/* Requests Dropdown */}
-            <div style={{position: 'relative'}}>
+            <div style={{ position: 'relative' }} className="dropdown-container">
               <button
                 onClick={() => toggleDropdown('requests')}
-                style={navLinkStyle}
-                onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-                onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}
+                style={dropdownButtonStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.4)';
+                  e.currentTarget.style.color = '#f87171';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                  e.currentTarget.style.color = '#e2e8f0';
+                }}
               >
                 <span>Requests</span>
-                <svg style={{width: '16px', height: '16px', transform: activeDropdown === 'requests' ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    transform: activeDropdown === 'requests' ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.3s ease',
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {activeDropdown === 'requests' && (
-                <div style={dropdownStyle}>
-                  <a href="/HolidayRequest" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    Full Leave Request
-                  </a>
-                  <a href="/HalfDayForm" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    HalfDay Request
-                  </a>
+                <div style={subDropdownStyle}>
+                  {[
+                    { href: '/HolidayRequest', label: 'Full Leave Request' },
+                    { href: '/HalfDayForm', label: 'Half Day Request' },
+                    { href: '/MidleSalRequest', label: 'Advance Payment Request' },
+                  ].map(item => (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      style={navLinkStyle}
+                      target={item.target || undefined}
+                      rel={item.rel || undefined}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)';
+                        e.currentTarget.style.color = '#f87171';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                        e.currentTarget.style.color = '#e2e8f0';
+                      }}
+                    >
+                      {item.label}
+                    </a>
+                  ))}
                 </div>
-
-                
               )}
             </div>
 
             {/* Reports Dropdown */}
-            <div style={{position: 'relative'}}>
+            <div style={{ position: 'relative' }} className="dropdown-container">
               <button
                 onClick={() => toggleDropdown('reports')}
-                style={navLinkStyle}
-                onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-                onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}
+                style={dropdownButtonStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.4)';
+                  e.currentTarget.style.color = '#f87171';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                  e.currentTarget.style.color = '#e2e8f0';
+                }}
               >
                 <span>Reports</span>
-                <svg style={{width: '16px', height: '16px', transform: activeDropdown === 'reports' ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    transform: activeDropdown === 'reports' ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.3s ease',
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {activeDropdown === 'reports' && (
-                <div style={{...dropdownStyle, width: '280px'}}>
-                  <a href="/HighestAndLowestdata" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    Attendance Summary
-                  </a>
-                  <a href="/ReportLeaveDataShow" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    Approved Leave
-                  </a>
-                  <a href="/LeaveNotAproved" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    Unapproved Leave
-                  </a>
-                  <a href="/HalfDayComparision" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    Approved Half Day
-                  </a>
-                  <a href="/NotApprovedHalfDayComparision" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    Unapproved Half Day
-                  </a>
-                  <hr style={{margin: '8px 0', border: 'none', borderTop: '1px solid #374151'}} />
-                  <a href="#" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    Advance Report
-                  </a>
-                  <a href="#" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    EPF Report
-                  </a>
-                  <a href="#" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    ETF Report
-                  </a>
-                  <a href="/AdminAllUsersSalData" style={dropdownLinkStyle}
-                     onMouseEnter={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}}
-                     onMouseLeave={(e) => {e.target.style.color = '#d1d5db'; e.target.style.backgroundColor = 'transparent'}}>
-                    Monthly Payslips
-                  </a>
+                <div style={subDropdownStyle}>
+                  {[
+                    { href: '/HighestAndLowestdata', label: 'Attendance Summary' },
+                    { href: '/ReportLeaveDataShow', label: 'Approved Leave' },
+                    { href: '/LeaveNotAproved', label: 'Unapproved Leave' },
+                    { href: '/HalfDayComparision', label: 'Approved Half Day' },
+                    { href: '/NotApprovedHalfDayComparision', label: 'Unapproved Half Day' },
+                    { href: '/AttendanceReport', label: 'Attendence Report' },
+                    { href: '/EpfPaymnetsDes', label: 'EPF Report' },
+                    { href: '/ETFPaymentsDes', label: 'ETF Report' },
+                    { href: '/AdminAllUsersSalData', label: 'Monthly Payslips' },
+                    { href: '/AllNetSalary', label: 'All Employees Salary Details' },
+                    { href: '/LeaveSummery', label: 'Leave Summary' },
+                    { href: '/AdancePaymentReport', label: 'Advance Payment Report' },
+                  ].map(item => (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      style={navLinkStyle}
+                      target={item.target || undefined}
+                      rel={item.rel || undefined}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)';
+                        e.currentTarget.style.color = '#f87171';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                        e.currentTarget.style.color = '#e2e8f0';
+                      }}
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                  <hr style={{ margin: '8px 0', border: 'none', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }} />
                 </div>
               )}
             </div>
           </div>
-
-          {/* Mobile menu button */}
-          <button
-            onClick={toggleMobile}
-            style={{...mobileButtonStyle, display: window.innerWidth < 768 ? 'block' : 'none'}}
-          >
-            <svg style={{height: '24px', width: '24px'}} stroke="currentColor" fill="none" viewBox="0 0 24 24">
-              {isOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-        </div>
+        )}
       </div>
-
-      {/* Mobile Navigation */}
-      {isOpen && window.innerWidth < 768 && (
-        <div style={mobileMenuStyle}>
-          <a href="#" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Home
-          </a>
-          <a href="/HolidayHandle-Admin" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Full Leave
-          </a>
-          <a href="/EmpRegister" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Employee Registration
-          </a>
-          <a href="/MonthlyMidSalary" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Halfday Request
-          </a>
-          <a href="/AdvancePayment" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Advance Payment
-          </a>
-          <a href="/UserManagement" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Edit Details
-          </a>
-          <a href="/HalfDayRequests" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Half Day
-          </a>
-          <a href="/BarcodeData" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Attendance
-          </a>
-          <a href="/AllUsersSallaryHandle" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            Allowance
-          </a>
-
-          <a href="/AllUsersSallaryHandle" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            ServiceCharge
-          </a>
-
-          <a href="/EpfApplication" style={mobileLinkStyle}
-             onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-             onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-            EPF/ETF
-          </a>
-
-          {/* Mobile Requests Section */}
-          <div style={{paddingTop: '16px'}}>
-            <div style={{color: '#ef4444', fontWeight: '600', padding: '0 16px 8px', fontSize: '14px'}}>Requests</div>
-            <a href="/HolidayRequest" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Full Leave Request
-            </a>
-            <a href="/HalfDayForm" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              HalfDay Request
-            </a>
-          </div>
-
-          {/* Mobile Reports Section */}
-          <div style={{paddingTop: '16px'}}>
-            <div style={{color: '#ef4444', fontWeight: '600', padding: '0 16px 8px', fontSize: '14px'}}>Reports</div>
-            <a href="/HighestAndLowestdata" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Attendance Summary
-            </a>
-            <a href="/ReportLeaveDataShow" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Approved Leave
-            </a>
-            <a href="/LeaveNotAproved" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Unapproved Leave
-            </a>
-            <a href="/HalfDayComparision" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Approved Half Day
-            </a>
-            <a href="/NotApprovedHalfDayComparision" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Unapproved Half Day
-            </a>
-            <a href="#" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Advance Report
-            </a>
-            <a href="#" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              EPF Report
-            </a>
-            <a href="#" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              ETF Report
-            </a>
-            <a href="/AdminAllUsersSalData" style={{...mobileLinkStyle, paddingLeft: '32px'}}
-               onMouseEnter={(e) => {e.target.style.color = '#ef4444'; e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}}
-               onMouseLeave={(e) => {e.target.style.color = '#ffffff'; e.target.style.backgroundColor = 'transparent'}}>
-              Monthly Payslips
-            </a>
-          </div>
-        </div>
-      )}
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            transform: translateY(-20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        div[style*="maxHeight: 80vh"] {
+          animation: slideIn 0.3s ease;
+        }
+      `}</style>
     </nav>
   );
 }

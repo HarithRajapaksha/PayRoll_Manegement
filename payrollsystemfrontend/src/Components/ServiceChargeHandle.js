@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Button, Form, Card, Container, Row, Col } from 'react-bootstrap';
 import Swal from 'sweetalert2';
+import './ChangebgColour.css'; // Import custom CSS for background color
 
 function ServiceChargeHandle() {
   const [allEmployees, setAllEmployees] = useState([]);
@@ -134,6 +135,7 @@ function ServiceChargeHandle() {
   };
 
   return (
+    <div className="page-bg">
     <Container style={{ marginTop: '50px' }}>
       <Row className="justify-content-center">
         <Col md={8} lg={6}>
@@ -248,6 +250,7 @@ function ServiceChargeHandle() {
         </Col>
       </Row>
     </Container>
+    </div>
   );
 }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import './ChangebgColour.css'; 
 
 const BarcodeAttendance = () => {
   const [barcode, setBarcode] = useState("");
@@ -97,7 +98,8 @@ const BarcodeAttendance = () => {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="page-bg">
+  
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="card shadow-lg p-4 text-center border-0 rounded">

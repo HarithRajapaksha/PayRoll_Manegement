@@ -6,6 +6,7 @@ import connectDB from './Src/Config/dbconnect.js';
 import authRoutes from './Src/Routes/authRoutes.js';
 import userRoutes from './Src/Routes/userRoutes.js';
 import EtfPaymentRoute from './Src/Routes/EtfPaymentRoute.js';
+import HolidayRoute from './Src/Routes/HolidayRoute.js';
 
 
 connectDB();
@@ -22,6 +23,7 @@ app.use(cors());
 app.use("/api/auth",authRoutes);
 app.use("/api/users",userRoutes);
 app.use("/api/etf",EtfPaymentRoute);
+app.use("/api/holiday",HolidayRoute);
 
 
 //Start the server

@@ -25,10 +25,10 @@ const Login = () => {
             alert("Login Success as " + response.data.userFind.role);
             localStorage.setItem('token', response.data.token);
             if(response.data.userFind.role === "Admin"){
-                navigate(`/HolidayHandle-Admin`);
+                navigate(`/EmployeeHomePage`);
             }
             else{
-                navigate(`/HolidayRequest`);
+                navigate(`/EmployeeHomePage`);
             }
             
 

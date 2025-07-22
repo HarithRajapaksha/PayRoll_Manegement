@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Container, Form, Button } from "react-bootstrap";
+import { Container, Form, Button, Card } from "react-bootstrap";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { jwtDecode } from "jwt-decode";
+import './ChangebgColour.css'; // Import custom CSS for background color
 
 const HalfDayForm = () => {
   const [formData, setFormData] = useState({
@@ -110,69 +111,77 @@ const HalfDayForm = () => {
   };
 
   return (
-    <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "500px",
-          padding: "20px",
-          borderRadius: "8px",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-          background: "#f8f9fa",
-        }}
+    <div className="page-bg">
+    <Container className="py-5 d-flex justify-content-center">
+      <Card
+        className="p-5 shadow-sm bg-light text-dark rounded-4"
+        style={{ maxWidth: "800px", width: "100%" }}
       >
-        <h2 className="text-center mb-4">Half-Day Request</h2>
-        <Form onSubmit={handleSubmit}>
-          {/* Half-Day Date */}
-          <Form.Group className="mb-3">
-            <Form.Label>Half-Day Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+        <Card.Header className="text-center bg-secondary bg-opacity-10 p-4 rounded-top-4">
+          <h2 className="mb-0 fw-semibold">Half-Day Request Form</h2>
+        </Card.Header>
+        <Card.Body>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-4">
+              <Form.Label className="fs-5">Half-Day Date</Form.Label>
+              <Form.Control
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                required
+                className="bg-white border-1 rounded-3 p-2"
+                style={{ fontSize: "1.1rem" }}
+              />
+            </Form.Group>
 
-          {/* Which Half (Morning/Evening) */}
-          <Form.Group className="mb-3">
-            <Form.Label>Which Half</Form.Label>
-            <Form.Select
-              name="whichHalf"
-              value={formData.whichHalf}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Half</option>
-              <option value="Morning">Morning</option>
-              <option value="Evening">Evening</option>
-            </Form.Select>
-          </Form.Group>
+            <Form.Group className="mb-4">
+              <Form.Label className="fs-5">Which Half</Form.Label>
+              <Form.Select
+                name="whichHalf"
+                value={formData.whichHalf}
+                onChange={handleChange}
+                required
+                className="bg-white border-1 rounded-3 p-2"
+                style={{ fontSize: "1.1rem" }}
+              >
+                <option value="">Select Half</option>
+                <option value="Morning">Morning</option>
+                <option value="Evening">Evening</option>
+              </Form.Select>
+            </Form.Group>
 
-          {/* Reason */}
-          <Form.Group className="mb-3">
-            <Form.Label>Reason</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              placeholder="Enter reason for half-day"
-              name="reason"
-              value={formData.reason}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+            <Form.Group className="mb-4">
+              <Form.Label className="fs-5">Reason</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={4}
+                placeholder="Enter reason for half-day"
+                name="reason"
+                value={formData.reason}
+                onChange={handleChange}
+                required
+                className="bg-white border-1 rounded-3 p-2"
+                style={{ fontSize: "1.1rem", minHeight: "120px" }}
+              />
+            </Form.Group>
 
-          {/* Submit Button */}
-          <div className="d-flex justify-content-center mt-4">
-            <Button type="submit" variant="primary" style={{ width: "180px" }} disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Request"}
-            </Button>
-          </div>
-        </Form>
-      </div>
+            <div className="text-center mt-5">
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={isSubmitting}
+                className="px-5 py-3 rounded-4"
+                style={{ fontSize: "1.2rem" }}
+              >
+                {isSubmitting ? "Submitting..." : "Submit Request"}
+              </Button>
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
     </Container>
+    </div>
   );
 };
 

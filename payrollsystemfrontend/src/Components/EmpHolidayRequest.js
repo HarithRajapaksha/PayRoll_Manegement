@@ -3,6 +3,7 @@ import { Container, Form, Button, Col, Row, Card } from 'react-bootstrap';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import Swal from 'sweetalert2';
+import './ChangebgColour.css'; // Import custom CSS for background color
 
 const HolidayRequestForm = () => {
   const [startDate, setStartDate] = useState('');
@@ -121,79 +122,118 @@ const HolidayRequestForm = () => {
   const isLeaveLimitExceeded = leaveCount + holidayDays > 7;
 
   return (
+    <div className="page-bg">
     <Container className="py-5 d-flex justify-content-center">
-      <Card className="p-4 w-100" style={{ maxWidth: '600px' }}>
-        <h3 className="text-center mb-4 text-primary">Full Leave Request Form</h3>
-        <Form onSubmit={handleSubmit}>
-          <Row>
-            <Col sm={6} className="mb-3">
-              <Form.Group controlId="startDate">
-                <Form.Label>Start Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  onBlur={handleDateChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col sm={6} className="mb-3">
-              <Form.Group controlId="endDate">
-                <Form.Label>End Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  onBlur={handleDateChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+      <Card
+        className="p-5 shadow-sm bg-light text-dark rounded-4"
+        style={{ maxWidth: '800px', width: '100%' }}
+      >
+        <Card.Header className="text-center bg-secondary bg-opacity-10 p-4 rounded-top-4">
+          <h2 className="mb-0 fw-semibold">Full Leave Request Form</h2>
+        </Card.Header>
+        <Card.Body>
+          <Form onSubmit={handleSubmit}>
+            <Row className="g-4">
+              <Col sm={6}>
+                <Form.Group controlId="startDate">
+                  <Form.Label className="fs-5">Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    onBlur={handleDateChange}
+                    required
+                    className="bg-white border-1 rounded-3 p-2"
+                    style={{ fontSize: '1.1rem' }}
+                  />
+                </Form.Group>
+              </Col>
+              <Col sm={6}>
+                <Form.Group controlId="endDate">
+                  <Form.Label className="fs-5">End Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    onBlur={handleDateChange}
+                    required
+                    className="bg-white border-1 rounded-3 p-2"
+                    style={{ fontSize: '1.1rem' }}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
-          {holidayDays > 0 && (
-            <Form.Group controlId="holidayDays" className="mb-3">
-              <Form.Label>Number of Holiday Days</Form.Label>
-              <Form.Control type="text" value={holidayDays} disabled />
+            {holidayDays > 0 && (
+              <Form.Group controlId="holidayDays" className="mt-4">
+                <Form.Label className="fs-5">Number of Holiday Days</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={holidayDays}
+                  disabled
+                  className="bg-white border-1 rounded-3 p-2"
+                  style={{ fontSize: '1.1rem' }}
+                />
+              </Form.Group>
+            )}
+
+            <Form.Group controlId="name" className="mt-4">
+              <Form.Label className="fs-5">Your Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={FetchuserData}
+                disabled
+                className="bg-white border-1 rounded-3 p-2"
+                style={{ fontSize: '1.1rem' }}
+              />
             </Form.Group>
-          )}
 
-          <Form.Group controlId="name" className="mb-3">
-            <Form.Label>Your Name</Form.Label>
-            <Form.Control type="text" value={FetchuserData} disabled />
-          </Form.Group>
+            <Form.Group controlId="jobRole" className="mt-4">
+              <Form.Label className="fs-5">Job Role</Form.Label>
+              <Form.Control
+                type="text"
+                value={jobRole}
+                disabled
+                className="bg-white border-1 rounded-3 p-2"
+                style={{ fontSize: '1.1rem' }}
+              />
+            </Form.Group>
 
-          <Form.Group controlId="jobRole" className="mb-3">
-            <Form.Label>Job Role</Form.Label>
-            <Form.Control type="text" value={jobRole} disabled />
-          </Form.Group>
+            <Form.Group controlId="reason" className="mt-4">
+              <Form.Label className="fs-5">Reason for Holiday</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={4}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                required
+                className="bg-white border-1 rounded-3 p-2"
+                style={{ fontSize: '1.1rem', minHeight: '120px' }}
+              />
+            </Form.Group>
 
-          <Form.Group controlId="reason" className="mb-3">
-            <Form.Label>Reason for Holiday</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              required
-            />
-          </Form.Group>
+            {isLeaveLimitExceeded && (
+              <div className="text-danger text-center fw-medium mt-4" style={{ fontSize: '1.1rem' }}>
+                Leave limit exceeded. You can only take 7 days per month.
+              </div>
+            )}
 
-          {isLeaveLimitExceeded && (
-            <div className="text-danger text-center fw-bold">
-              Leave limit exceeded. You can only take 7 days per month.
+            <div className="text-center mt-5">
+              <Button
+                variant="secondary"
+                type="submit"
+                disabled={isLeaveLimitExceeded}
+                className="px-5 py-3 rounded-4"
+                style={{ fontSize: '1.2rem' }}
+              >
+                Submit Request
+              </Button>
             </div>
-          )}
-
-          <div className="text-center mt-4">
-            <Button variant="primary" type="submit" disabled={isLeaveLimitExceeded}>
-              Submit Request
-            </Button>
-          </div>
-        </Form>
+          </Form>
+        </Card.Body>
       </Card>
     </Container>
+    </div>
   );
 };
 
