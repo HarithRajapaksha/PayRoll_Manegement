@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import Chart from 'react-google-charts';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Bootstrap CSS
 
 function LeaveSummery() {
@@ -16,7 +17,7 @@ function LeaveSummery() {
   const [month, setMonth] = useState(
     (new Date().getMonth() + 1).toString().padStart(2, '0'), // Default to current month
   );
-  const reportRef = useRef(null); // Changed to capture header and table
+  const tableRef = useRef(null); // Ref for table only
 
   // Generate year options (2000 to current year + 1)
   const currentYear = new Date().getFullYear();
@@ -84,28 +85,59 @@ function LeaveSummery() {
 
   // Generate and download PDF
   const generatePDF = async () => {
-    const report = reportRef.current;
-    if (!report) return;
+    const table = tableRef.current;
+    if (!table) return;
 
-    const canvas = await html2canvas(report, { scale: 2 }); // Increased scale for better quality
-    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgWidth = 190; // A4 width in mm (210) minus margins
-    const pageHeight = 295; // A4 height in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 10; // Top margin
 
-    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    // Add header with address and telephone
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('The Karnivore Restaurant', 105, 15, { align: 'center' });
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('No 263, Nawala Rd, SribJayawardenapura Kotte', 105, 25, { align: 'center' });
+    pdf.text('Tel: 0113517277', 105, 33, { align: 'center' });
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`Leave Report for ${monthOptions.find((m) => m.value === month)?.label} ${year}`, 105, 43, { align: 'center' });
 
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight + 10;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
+    // Prepare table data
+    const tableBody = leaveData.leaveSummary.length > 0
+      ? leaveData.leaveSummary.map((item) => [
+          item.CorrectuserId || 'N/A',
+          item.name || 'Unknown',
+          item.role || 'N/A',
+          item.count || '0',
+        ])
+      : [['N/A', 'No leave data available', 'N/A', '0']];
 
+    // Generate table using jspdf-autotable
+    autoTable(pdf, {
+      startY: 50,
+      head: [['EmployeeID', 'Name', 'Role', 'Leave Count']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [33, 37, 41], // Dark gray (table-dark)
+        textColor: [255, 255, 255], // White text
+        fontSize: 10,
+        fontStyle: 'bold',
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: [33, 37, 41],
+      },
+      columnStyles: {
+        0: { halign: 'center' },
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+      },
+      margin: { top: 50, left: 10, right: 10 },
+    });
+
+    // Save PDF
     pdf.save(`LeaveReport_${year}_${month}.pdf`);
   };
 
@@ -123,15 +155,17 @@ function LeaveSummery() {
   return (
     <div className="page-bg">
       <div className="container mt-4">
-        {/* Header Section */}
-        <div ref={reportRef}>
-          <h1 className="text-center mb-2">Karnivo</h1>
-          <h3 className="text-center mb-2">
+        {/* Header Section for UI */}
+        <div>
+          <h1 className="text-center mb-2">The Karnivore Restaurant</h1>
+          <h3 className="text-center mb-4">
             {monthOptions.find((m) => m.value === month)?.label} {year}
           </h3>
           <h2 className="text-center mb-4">Leave Report</h2>
+        </div>
 
-          {/* Bootstrap Table */}
+        {/* Bootstrap Table */}
+        <div ref={tableRef}>
           <table className="table table-bordered table-striped">
             <thead className="thead-dark">
               <tr>

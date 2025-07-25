@@ -249,9 +249,14 @@ function AdminSalaryViewer() {
               <div style={payslipStyles.companyName}>
                 THE KARNIVORE RESTAURANT
               </div>
-              <div style={payslipStyles.payslipTitle}>
-                PAYSLIP
+              <div >
+                No 263, Nawala Rd, Sri Jayawardenepura Kotte
               </div>
+
+               <div >
+                Tel : 011-3-517277
+              </div>
+
             </div>
 
             {/* Employee Information */}
@@ -314,20 +319,13 @@ function AdminSalaryViewer() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td style={payslipStyles.tableCell}>EPF (Employee)</td>
+                    <td style={payslipStyles.tableCell}>EPF</td>
                     <td style={payslipStyles.tableCell}>{Number(salaryData.EPF).toFixed(2)}</td>
                   </tr>
-                  <tr>
-                    <td style={payslipStyles.tableCell}>ETF</td>
-                    <td style={payslipStyles.tableCell}>{Number(salaryData.ETF).toFixed(2)}</td>
-                  </tr>
+                 
                   <tr>
                     <td style={payslipStyles.tableCell}>No Pay</td>
                     <td style={payslipStyles.tableCell}>{Number(salaryData.NoPay).toFixed(2)}</td>
-                  </tr>
-                  <tr>
-                    <td style={payslipStyles.tableCell}>Half Days</td>
-                    <td style={payslipStyles.tableCell}>{salaryData.NumberOfHalfDays}</td>
                   </tr>
                 </tbody>
               </table>
@@ -341,7 +339,7 @@ function AdminSalaryViewer() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td style={payslipStyles.tableCell}>Employer Contribution (12%)</td>
+                    <td style={payslipStyles.tableCell}>EPF</td>
                     <td style={payslipStyles.tableCell}>{(Number(salaryData.BasicSal) * 0.12).toFixed(2)}</td>
                   </tr>
                   <tr>

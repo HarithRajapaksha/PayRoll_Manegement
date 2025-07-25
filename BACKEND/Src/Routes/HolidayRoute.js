@@ -67,6 +67,7 @@ router.get('/getEmployeeDetails/:id', verifyToken, async (req, res) => {
         name: user.name,
         role:user.role,
         EmpId: user.CorrectuserId,
+        dateOfJoin: user.dateOfJoin
         });
 
 

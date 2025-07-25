@@ -97,7 +97,7 @@ function EmployeeHomePage() {
     })
       .then((response) => {
         console.log('Employee API Status:', response.status);
-        console.log('Employee API Headers:', Object.fromEntries(response.headers.entries()));
+        console.log('Employee API Headers:', response);
         
         if (!response.ok) {
           return response.text().then((text) => {
@@ -128,7 +128,7 @@ function EmployeeHomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  const totalHolidays = 10;
+  const totalHolidays = 7;
   const usedHolidays = holidayData?.totalDays || 0;
   const remainingHolidays = totalHolidays - usedHolidays;
 
@@ -556,8 +556,8 @@ function EmployeeHomePage() {
                 <span style={styles.profileValue}>{employeeData?.role || 'N/A'}</span>
               </div>
               <div style={styles.profileRow}>
-                <span style={styles.profileLabel}>Basic Salary</span>
-                <span style={styles.salaryValue}>LKR {employeeData?.BasicSalary || '0'}</span>
+                <span style={styles.profileLabel}>Date of Join</span>
+                <span style={styles.salaryValue}>{employeeData.dateOfJoin}</span>
               </div>
             </div>
           </div>
@@ -572,7 +572,7 @@ function EmployeeHomePage() {
               <div style={{...styles.cardIcon, background: 'linear-gradient(135deg, #10b981, #3b82f6)'}}>
                 <Calendar size={24} color="white" />
               </div>
-              <h3 style={styles.cardTitle}>Holiday Status</h3>
+              <h3 style={styles.cardTitle}>Leave Status</h3>
             </div>
             
             <div style={styles.holidayGrid}>

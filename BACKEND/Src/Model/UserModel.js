@@ -22,9 +22,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     unique: true,
   },
-  image: {
-    type: String, // Store filename or image path if needed
-  },
+
   telephone: {
     type: String,
     required: true,
@@ -93,6 +91,9 @@ const userSchema = new mongoose.Schema({
 
   empId: {
     type: String, // Optional field from backend (EMP-xxxx)
+  },
+    image: {
+    type: String, // Store filename or image path if needed
   }
 }, { timestamps: true });
 

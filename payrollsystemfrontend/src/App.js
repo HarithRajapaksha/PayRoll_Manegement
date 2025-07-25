@@ -36,6 +36,9 @@ import AllNetSalary from "./Components/AllNetSalary.js";
 import LeaveSummery from "./Components/LeaveSummery.js";
 import AdancePaymentReport from "./Components/AdancePaymentReport.js";
 import AttendanceReport from "./Components/AttendenceReport.js";
+import AdvancePaymentForEmp from "./Components/AdvancePaymentForEmp.js";
+import UserLeavesStatus from "./Components/UserLeavesStatus.js";
+import HalfDayForEmp from "./Components/HalfDayForEmp.js";
 
 import { jwtDecode } from "jwt-decode";
 
@@ -105,6 +108,9 @@ function App() {
         <Route path="/LeaveSummery" element={<LeaveSummery />} />
         <Route path="/AdancePaymentReport" element={<AdancePaymentReport />} />
         <Route path="/AttendanceReport" element={<AttendanceReport />} />
+        <Route path="/AdvancePaymentForEmp" element={<AdvancePaymentForEmp />} />
+        <Route path="/UserLeavesStatus" element={<UserLeavesStatus />} />
+        <Route path="/HalfDayForEmp" element={<HalfDayForEmp />} />
         
       </Routes>
     </Router>

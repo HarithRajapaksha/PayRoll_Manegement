@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Bootstrap CSS
 
 function AdancePaymentReport() {
@@ -12,7 +12,7 @@ function AdancePaymentReport() {
   const [error, setError] = useState(null);
   const [year, setYear] = useState('2025'); // Default to 2025 based on API call
   const [month, setMonth] = useState('07'); // Default to July based on API call
-  const reportRef = useRef(null); // Changed to capture header and table
+  const tableRef = useRef(null); // Ref for table only
 
   // Generate year options (2000 to current year + 1)
   const currentYear = new Date().getFullYear();
@@ -74,41 +74,86 @@ function AdancePaymentReport() {
 
   // Generate and download PDF
   const generatePDF = async () => {
-    const report = reportRef.current;
-    if (!report) return;
+    const table = tableRef.current;
+    if (!table) return;
 
-    const canvas = await html2canvas(report, { scale: 2 }); // Increased scale for better quality
-    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgWidth = 190; // A4 width in mm (210) minus margins
-    const pageHeight = 295; // A4 height in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 10; // Top margin
 
-    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    // Add header with address and telephone
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('The Karnivore Restaurant', 105, 15, { align: 'center' });
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('No 263, Nawala Rd, Sri Jayawardenapura Kotte', 105, 25, { align: 'center' });
+    pdf.text('Tel: 0113517277', 105, 33, { align: 'center' });
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`Advance Payment Report for ${monthOptions.find((m) => m.value === month)?.label} ${year}`, 105, 43, { align: 'center' });
 
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight + 10;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
+    // Prepare table data
+    const tableBody = advanceData.advances.length > 0
+      ? advanceData.advances.map((item) => [
+          item.CorrectuserId || 'N/A',
+          item.Name || 'Unknown',
+          item.Role || 'N/A',
+          item.Salary || '0',
+        ])
+      : [['N/A', 'No advance payment data available', 'N/A', '0']];
 
+    // Prepare footer (total row)
+    const footerRow = [
+      { content: 'Net Salary Paid', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
+      advanceData.totalSalary || '0',
+    ];
+
+    // Generate table using jspdf-autotable
+    autoTable(pdf, {
+      startY: 50,
+      head: [['Emp ID', 'Name', 'Role', 'Advance Payment (Rs)']],
+      body: tableBody,
+      foot: [footerRow],
+      theme: 'grid',
+      headStyles: {
+        fillColor: [33, 37, 41], // Dark gray (table-dark)
+        textColor: [255, 255, 255], // White text
+        fontSize: 10,
+        fontStyle: 'bold',
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: [33, 37, 41],
+      },
+      footStyles: {
+        fillColor: [200, 200, 200], // Gray for total row
+        fontStyle: 'bold',
+        fontSize: 9,
+        textColor: [33, 37, 41],
+      },
+      columnStyles: {
+        0: { halign: 'center' },
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'right' },
+      },
+      margin: { top: 50, left: 10, right: 10 },
+    });
+
+    // Save PDF
     pdf.save(`AdvancePaymentReport_${year}_${month}.pdf`);
   };
 
   return (
-     <div className="page-bg">
-    <div className="container mt-4">
-      {/* Header Section */}
-      <div ref={reportRef}>
-        <h1 className="text-center mb-2">Karnivo</h1>
-        <h3 className="text-center mb-2">
-          {monthOptions.find((m) => m.value === month)?.label} {year}
-        </h3>
-        <h2 className="text-center mb-4">Advance Payment Report</h2>
+    <div className="page-bg">
+      <div className="container mt-4">
+        {/* Header Section for UI */}
+        <div>
+          <h1 className="text-center mb-2">The Karnivore Restaurant</h1>
+          <h3 className="text-center mb-4">
+            {monthOptions.find((m) => m.value === month)?.label} {year}
+          </h3>
+          <h2 className="text-center mb-4">Advance Payment Report</h2>
+        </div>
 
         {/* Year and Month Selection */}
         <div className="row mb-4">
@@ -152,51 +197,52 @@ function AdancePaymentReport() {
         {error && <div className="alert alert-danger">{error}</div>}
 
         {/* Bootstrap Table */}
-        <table className="table table-bordered table-striped">
-          <thead className="thead-dark">
-            <tr>
-              <th>EmpId</th>
-              <th>Name</th>
-              <th>Role</th>
-              <th>Advance Payment</th>
-            </tr>
-          </thead>
-          <tbody>
-            {advanceData.advances.length > 0 ? (
-              advanceData.advances.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.CorrectuserId}</td>
-                  <td>{item.Name}</td>
-                  <td>{item.Role}</td>
-                  <td>{item.Salary}</td>
-                </tr>
-              ))
-            ) : (
+        <div ref={tableRef}>
+          <table className="table table-bordered table-striped">
+            <thead className="thead-dark">
               <tr>
-                <td colSpan="4" className="text-center">
-                  No advance payment data available
-                </td>
+                <th>Emp ID</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Advance Payment (Rs)</th>
               </tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan="3" className="text-right font-weight-bold">
-                Net Salary Paid
-              </td>
-              <td className="font-weight-bold">{advanceData.totalSalary}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {advanceData.advances.length > 0 ? (
+                advanceData.advances.map((item, index) => (
+                  <tr key={index}>
+                    <td>{item.CorrectuserId}</td>
+                    <td>{item.Name}</td>
+                    <td>{item.Role}</td>
+                    <td>{item.Salary}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="text-center">
+                    No advance payment data available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan="3" className="text-right font-weight-bold">
+                  Net Salary Paid
+                </td>
+                <td className="font-weight-bold">{advanceData.totalSalary}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
 
-      {/* Download PDF Button */}
-      <div className="text-center mt-4">
-        <button className="btn btn-primary" onClick={generatePDF}>
-          Download PDF
-        </button>
+        {/* Download PDF Button */}
+        <div className="text-center mt-4">
+          <button className="btn btn-primary" onClick={generatePDF}>
+            Download PDF
+          </button>
+        </div>
       </div>
-    </div>
     </div>
   );
 }

@@ -31,6 +31,23 @@ router.get('/admin/:userId', verifyToken, authorizeRoles( 'Admin', 'Maneger', 'H
 });
 
 
+
+router.get('/leaveRe/:userId', verifyToken, authorizeRoles( 'Admin', 'Maneger', 'Headchef', 'Subchef', 'Supervisior', 'Waiter', 'Helper'), async (req, res) => {
+  const userId = req.params.userId;
+  console.log("User Id is : ", userId);
+  console.log("called this one");
+  try {
+    const FindUser = await User.findOne({ _id: userId }).lean();
+    if (!FindUser) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json({ message: 'User found', FindUser });
+    console.log("User found: ", FindUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Error finding user' });
+    console.log("Error is : ", error);
+  }
+});
+
+
 //Only manager can access this route
 router.get('/manager',verifyToken,authorizeRoles('maneger'),(req,res)=>{
     res.send('Welcome Manager');
@@ -2922,10 +2939,9 @@ const generateRandomOutTime = (createdAt) => {
 // Description: Get attendance report for a specific user, year, and month
 router.get('/attendance/:year/:month/:userId', async (req, res) => {
   try {
-    // Extract year, month, and userId from URL parameters
     const { year, month, userId } = req.params;
 
-    // Validate year, month, and userId
+    // Validate inputs
     const yearNum = parseInt(year);
     const monthNum = parseInt(month);
 
@@ -2945,14 +2961,14 @@ router.get('/attendance/:year/:month/:userId', async (req, res) => {
       return res.status(400).json({ error: 'UserId is required' });
     }
 
-    // Convert month and year to date range for filtering
-    const startDate = new Date(yearNum, monthNum - 1, 1); // First day of the month
-    const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999); // Last millisecond of the month
+    // Date range for filtering
+    const startDate = new Date(yearNum, monthNum - 1, 1);
+    const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999);
 
     console.log('Parameters:', { year, month, userId });
     console.log('Date Range:', { startDate, endDate });
 
-    // Find User by CorrectuserId to get _id
+    // Find User
     const user = await User.findOne({ _id: userId });
     if (!user) {
       return res.status(404).json({ error: `User with CorrectuserId ${userId} not found` });
@@ -2961,33 +2977,17 @@ router.get('/attendance/:year/:month/:userId', async (req, res) => {
 
     console.log('Found User:', { CorrectuserId: user.CorrectuserId, _id: userIdString });
 
-    // Debugging: Check Attendance data for the user
-    const attendanceCount = await Attendance.countDocuments({
-      userId: userIdString,
-      createdAt: { $gte: startDate, $lte: endDate },
-    });
-    console.log('Attendance Count for User:', attendanceCount);
-
-    // Debugging: Sample Attendance data
-    const sampleAttendance = await Attendance.findOne({
-      userId: userIdString,
-      createdAt: { $gte: startDate, $lte: endDate },
-    });
-    console.log('Sample Attendance:', sampleAttendance);
-
-    // Aggregation: Filter Attendance by userId and createdAt, join with User
+    // Aggregation
     const result = await Attendance.aggregate([
-      // Step 1: Filter by userId and createdAt range
       {
         $match: {
           userId: userIdString,
-          createdAt: { $gte: startDate, $lte: endDate },
+          date: { $gte: startDate, $lte: endDate }, // Filter on 'date' field
         },
       },
-      // Step 2: Lookup User records
       {
         $lookup: {
-          from: 'users', // Adjust to your actual collection name
+          from: 'users',
           let: { userId: '$userId' },
           pipeline: [
             {
@@ -3006,39 +3006,41 @@ router.get('/attendance/:year/:month/:userId', async (req, res) => {
           as: 'userData',
         },
       },
-      // Step 3: Unwind userData
       {
         $unwind: {
           path: '$userData',
-          preserveNullAndEmptyArrays: true, // Keep Attendance records if no User match
+          preserveNullAndEmptyArrays: true,
         },
       },
-      // Step 4: Project desired fields
       {
         $project: {
-          CorrectuserId: { $ifNull: ['$userData.CorrectuserId', 'Unknown'] },
+          _id: 1,
+          userId: 1,
           name: 1,
-          createdAt: 1,
+          date: 1,
+          time: 1,
           status: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          __v: 1,
+          CorrectuserId: { $ifNull: ['$userData.CorrectuserId', 'Unknown'] },
         },
       },
-      // Step 5: Sort by createdAt
       {
         $sort: {
-          createdAt: 1,
+          date: 1, // Sort by date instead of createdAt
         },
       },
     ]);
 
-    // Add outTime to each record
+    // Add outTime
     const resultWithOutTime = result.map((record) => ({
       ...record,
-      outTime: generateRandomOutTime(record.createdAt),
+      outTime: generateRandomOutTime(record.date), // Use 'date' for outTime
     }));
 
     console.log('Aggregation Result with outTime:', resultWithOutTime);
 
-    // Return the result
     res.status(200).json({
       success: true,
       data: resultWithOutTime,
@@ -3054,7 +3056,104 @@ router.get('/attendance/:year/:month/:userId', async (req, res) => {
 });
 
 
+router.get(
+  '/middle-salary/:userId',
+  verifyToken,
+  authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'),
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
 
+      const today = new Date();
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+      // Step 1: Get middle salary records for this user in the current month
+      const middleSalaryData = await MiddleSal.find({
+        Uid: userId,
+        createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+      }).lean();
+
+      if (middleSalaryData.length === 0) {
+        return res.status(404).json({ message: 'No middle salary data found for this user this month.' });
+      }
+
+      // Step 2: Get the user by ID
+      const user = await User.findById(userId).lean();
+      const correctUserId = user ? user.CorrectuserId : null;
+
+      // Step 3: Add CorrectuserId (as EmpId or similar) to each salary entry
+      const enrichedData = middleSalaryData.map(salary => ({
+        ...salary,
+        EmpId: correctUserId
+      }));
+
+      res.status(200).json(enrichedData);
+    } catch (error) {
+      console.error('Error fetching middle salary data:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
+);
+
+
+//Get the LeaveData for a specific user
+router.get('/leave-data/:userId', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  const { userId } = req.params;
+
+  const today = new Date();
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  try {
+    const leaveData = await LeaveData.find({CorrectuserId: userId, createdAt: { $gte: startOfMonth, $lte: endOfMonth } }).lean();
+
+    if (!leaveData || leaveData.length === 0) {
+      return res.status(404).json({ message: 'No leave data found for this user.' });
+    }
+
+    res.status(200).json(leaveData);
+  } catch (error) {
+    console.error('Error fetching leave data:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+
+//get the halfday data for a specific user
+router.get('/halfday-data/:userId', verifyToken, authorizeRoles('Admin', 'Manager', 'Headchef', 'Subchef', 'Supervisor'), async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findOne({ _id: userId }).lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const halfDayData = await HalfDay.find({
+      userId: user._id,
+      createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+    }).lean();
+
+    // Build the array response
+    const responseArray = halfDayData.map((entry) => ({
+      ...entry,
+      EmpID: user.CorrectuserId || 'N/A',
+      EmpName: user.name || 'Name Not Found',
+    }));
+
+    res.status(200).json(responseArray);
+  } catch (error) {
+    console.error('Error fetching user with half-day data:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 module.exports=router;

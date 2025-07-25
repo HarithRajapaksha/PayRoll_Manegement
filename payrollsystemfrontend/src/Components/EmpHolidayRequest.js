@@ -65,7 +65,7 @@ const HolidayRequestForm = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3006/api/users/admin/${decoded.id}`,
+          `http://localhost:3006/api/users/leaveRe/${decoded.id}`,
           {
             headers: {
               Accept: 'application/json',
@@ -166,7 +166,7 @@ const HolidayRequestForm = () => {
 
             {holidayDays > 0 && (
               <Form.Group controlId="holidayDays" className="mt-4">
-                <Form.Label className="fs-5">Number of Holiday Days</Form.Label>
+                <Form.Label className="fs-5">Number of Leaves</Form.Label>
                 <Form.Control
                   type="text"
                   value={holidayDays}
@@ -200,7 +200,7 @@ const HolidayRequestForm = () => {
             </Form.Group>
 
             <Form.Group controlId="reason" className="mt-4">
-              <Form.Label className="fs-5">Reason for Holiday</Form.Label>
+              <Form.Label className="fs-5">Reason for Leave</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={4}

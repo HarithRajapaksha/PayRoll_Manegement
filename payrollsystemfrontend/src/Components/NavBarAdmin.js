@@ -213,19 +213,19 @@ function NavBar() {
             {/* Main Navigation Items */}
             {[
               { href: '/EmployeeHomePage', label: 'Home' },
-              { href: '/BarcodeData', label: 'Attendece Read' },
-              { href: '/HolidayHandle-Admin', label: 'Full Leave' },
+              { href: '/BarcodeData', label: 'Attendece Record' },
+              { href: '/HolidayHandle-Admin', label: 'Leave Management' },
               { href: '/EmpRegister', label: 'Employee Registration' },
-              { href: '/MonthlyMidSalary', label: 'Advance Payment Handle' },
+              { href: '/MonthlyMidSalary', label: 'Advance Payment Management' },
               { href: '/AdvancePayment', label: 'Advance Payment' },
-              { href: '/UserManagement', label: 'Edit Details' },
-              { href: '/HalfDayRequests', label: 'Half Day' },
-              { href: '/AllowanceHandle', label: 'Allowances' },
-              { href: '/ETF_Payment', label: 'ETF Payment' },
-              { href: '/ServiceChargeHandle', label: 'Service Charge' },
+              { href: '/UserManagement', label: 'EmployeeDetails Management' },
+              { href: '/HalfDayRequests', label: 'Half Day Management' },
+              { href: '/AllowanceHandle', label: 'Allowances Management' },
+              { href: '/ETF_Payment', label: 'ETF Payment management' },
+              { href: '/ServiceChargeHandle', label: 'Service Charge management' },
               { href: '/AllEmployeesIdData', label: 'Employee ID' },
-              { href: '/EpfPayment', label: 'EPF Payment' },
-              { href: '/', label: 'Logout' }, 
+              { href: '/EpfPayment', label: 'EPF Payment management' },
+              { href: '/', label: 'Logout' },
             ].map(item => (
               <a
                 key={item.href}
@@ -345,8 +345,8 @@ function NavBar() {
                     { href: '/EpfPaymnetsDes', label: 'EPF Report' },
                     { href: '/ETFPaymentsDes', label: 'ETF Report' },
                     { href: '/AdminAllUsersSalData', label: 'Monthly Payslips' },
-                    { href: '/AllNetSalary', label: 'All Employees Salary Details' },
-                    { href: '/LeaveSummery', label: 'Leave Summary' },
+                    { href: '/AllNetSalary', label: 'Overall Paysheet' },
+                    { href: '/LeaveSummery', label: 'Leave Summary Report' },
                     { href: '/AdancePaymentReport', label: 'Advance Payment Report' },
                   ].map(item => (
                     <a

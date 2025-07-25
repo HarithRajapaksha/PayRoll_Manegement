@@ -77,7 +77,7 @@ const SalaryRequestForm = () => {
       const data = {
         id: currentId,
         Status: false,
-        declineReason: declineReason
+        Reason: declineReason
       };
 
       const response = await axios.put('http://localhost:3006/api/users/updateMiddleSal', data, {

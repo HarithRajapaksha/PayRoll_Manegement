@@ -2,29 +2,26 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Bootstrap CSS
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function AttendanceReport() {
-  const { userId: initialUserId } = useParams(); // Get userId from URL params (optional)
+  const { userId: initialUserId } = useParams();
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(initialUserId || '');
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [year, setYear] = useState('2025'); // Default to 2025
-  const [month, setMonth] = useState('07'); // Default to July based on data
+  const [year, setYear] = useState('2025');
+  const [month, setMonth] = useState('07');
   const tableRef = useRef(null);
 
-  // Token retrieval
   const token = localStorage.getItem('token');
 
-  // Generate year options (2000 to current year + 1)
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: currentYear - 2000 + 2 }, (_, i) =>
     (2000 + i).toString(),
   );
 
-  // Month options (01 to 12)
   const monthOptions = [
     { value: '01', label: 'January' },
     { value: '02', label: 'February' },
@@ -40,7 +37,6 @@ function AttendanceReport() {
     { value: '12', label: 'December' },
   ];
 
-  // Fetch all users
   useEffect(() => {
     const fetchUsers = async () => {
       if (!token) {
@@ -90,7 +86,6 @@ function AttendanceReport() {
     fetchUsers();
   }, [token, initialUserId]);
 
-  // Fetch attendance data when userId, year, or month changes
   useEffect(() => {
     const fetchAttendanceData = async () => {
       if (!selectedUserId) {
@@ -140,7 +135,6 @@ function AttendanceReport() {
     fetchAttendanceData();
   }, [year, month, selectedUserId, token]);
 
-  // Format createdAt to date (YYYY-MM-DD) and time (HH:MM:SS AM/PM)
   const formatDateTime = (dateString) => {
     if (!dateString) return { createdDate: 'N/A', createdTime: 'N/A' };
     const date = new Date(dateString);
@@ -150,12 +144,11 @@ function AttendanceReport() {
     const minutes = date.getUTCMinutes().toString().padStart(2, '0');
     const seconds = date.getUTCSeconds().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
-    const hours12 = hours % 12 || 12; // Convert to 12-hour format
+    const hours12 = hours % 12 || 12;
     const createdTime = `${hours12}:${minutes}:${seconds} ${ampm}`;
     return { createdDate, createdTime };
   };
 
-  // Generate and download PDF
   const generatePDF = async () => {
     const table = tableRef.current;
     if (!table) {
@@ -167,47 +160,59 @@ function AttendanceReport() {
       const canvas = await html2canvas(table, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 190; // A4 width in mm (210) minus margins
-      const pageHeight = 295; // A4 height in mm
+      const imgWidth = 190;
+      const pageHeight = 295;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       // Add headers
       pdf.setFontSize(18);
-      pdf.text('Karnivo', 105, 20, { align: 'center' }); // h2 equivalent
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('The Karnivore Restaurant', 105, 15, { align: 'center' });
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('No 263, Nawala Rd, Sri Jayawardenapura Kotte', 105, 25, { align: 'center' });
+      pdf.text('Tel: 0113517277', 105, 33, { align: 'center' });
       pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
       pdf.text(
         `${monthOptions.find((m) => m.value === month)?.label || 'N/A'} ${year}`,
         105,
-        30,
+        43,
         { align: 'center' }
-      ); // h3 equivalent
+      );
       pdf.setFontSize(12);
-      pdf.text('Attendance Report', 105, 40, { align: 'center' }); // h4 equivalent
+      pdf.text('Attendance Report', 105, 50, { align: 'center' });
 
       // Add table image below headers
       let heightLeft = imgHeight;
-      let position = 50; // Start below headers
+      let position = 55;
 
       pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight - 50; // Adjust for header space
+      heightLeft -= pageHeight - 55;
 
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 50;
+        position = heightLeft - imgHeight + 55;
         pdf.addPage();
         // Repeat headers on new pages
         pdf.setFontSize(18);
-        pdf.text('Karnivo', 105, 20, { align: 'center' });
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('The Karnivore Restaurant', 105, 15, { align: 'center' });
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('No 263, Nawala Rd, Sri Jayawardenapura Kotte', 105, 25, { align: 'center' });
+        pdf.text('Tel: 0113517277', 105, 33, { align: 'center' });
         pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
         pdf.text(
           `${monthOptions.find((m) => m.value === month)?.label || 'N/A'} ${year}`,
           105,
-          30,
+          43,
           { align: 'center' }
         );
         pdf.setFontSize(12);
-        pdf.text('Attendance Report', 105, 40, { align: 'center' });
+        pdf.text('Attendance Report', 105, 50, { align: 'center' });
         pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight - 50;
+        heightLeft -= pageHeight - 55;
       }
 
       pdf.save(`AttendanceReport_${year}_${month}_${selectedUserId || 'unknown'}.pdf`);
@@ -220,7 +225,7 @@ function AttendanceReport() {
   return (
     <div className="container mt-4">
       {/* Report Header */}
-      <h2 className="mb-2 text-center">Karnivo</h2>
+      <h2 className="mb-2 text-center">The Karnivore Restaurant</h2>
       <h3 className="mb-2 text-center">
         {monthOptions.find((m) => m.value === month)?.label || 'N/A'} {year}
       </h3>
@@ -300,7 +305,7 @@ function AttendanceReport() {
         <table className="table table-bordered table-striped">
           <thead className="thead-dark">
             <tr>
-              <th>EmpId</th>
+              <th>Emp ID</th>
               <th>Name</th>
               <th>Date</th>
               <th>In Time</th>
@@ -315,7 +320,13 @@ function AttendanceReport() {
                   <tr key={item._id || index}>
                     <td>{item.CorrectuserId || 'N/A'}</td>
                     <td>{item.name || 'N/A'}</td>
-                    <td>{createdDate}</td>
+                   <td>
+                   {new Date(item.date).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                 month: 'long',
+                day: 'numeric',
+                  })}
+                 </td>
                     <td>{createdTime}</td>
                     <td>{item.outTime || 'N/A'}</td>
                   </tr>

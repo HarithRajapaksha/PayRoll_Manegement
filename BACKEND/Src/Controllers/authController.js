@@ -28,7 +28,8 @@ const register = async (req, res) => {
       empType,
       bankName,
       bankBranch,
-      accountNo
+      accountNo,
+      image
     } = req.body;
 
     const newUser = new User({
@@ -52,7 +53,8 @@ const register = async (req, res) => {
       bankBranch,
       accountNo,
       barcode: randomEAN,
-      empId: id
+      empId: id,
+      image: image ? image : null // Handle optional image field
     });
 
     await newUser.save();
