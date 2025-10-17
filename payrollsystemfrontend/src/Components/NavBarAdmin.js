@@ -211,8 +211,9 @@ function NavBar() {
         {isOpen && (
           <div style={dropdownStyle} className="dropdown-container">
             {/* Main Navigation Items */}
-            {[
+              {[  
               { href: '/EmployeeHomePage', label: 'Home' },
+              { href: '/ManualAttendence',label:'ManualAttendence'},
               { href: '/BarcodeData', label: 'Attendece Record' },
               { href: '/HolidayHandle-Admin', label: 'Leave Management' },
               { href: '/EmpRegister', label: 'Employee Registration' },

@@ -32,6 +32,11 @@ const register = async (req, res) => {
       image
     } = req.body;
 
+    const existingUser = await User.findOne({ nic });
+    if (existingUser) {
+      return res.status(400).json({ message: 'NIC already exists. Please use a different NIC.' });
+    }
+
     const newUser = new User({
       name,
       userName,

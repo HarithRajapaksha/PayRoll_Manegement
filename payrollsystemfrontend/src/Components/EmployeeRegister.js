@@ -44,6 +44,8 @@ const bankList = {
   "ICICI Bank": ["Colombo"]
 };
 
+const nicPattern = /^(?:\d{9}[vVxX]|\d{12})$/;
+
 function EmployeeRegister() {
   const [formData, setFormData] = useState({
     name: '', nic: '', dob: '', age: '',
@@ -58,6 +60,7 @@ function EmployeeRegister() {
   const [imageUrl, setImageUrl] = useState(''); // New state for Firebase image URL
   const [userAId, setUserId] = useState('');
   const [validated, setValidated] = useState(false);
+  const [nicError, setNicError] = useState('');
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
@@ -72,7 +75,7 @@ function EmployeeRegister() {
 
   useEffect(() => {
     const { nic } = formData;
-    if (/^(?:\d{9}[vVxX]|\d{12})$/.test(nic)) {
+    if (nicPattern.test(nic)) {
       let year = nic.length === 10 ? '19' + nic.slice(0, 2) : nic.slice(0, 4);
       let day = parseInt(nic.length === 10 ? nic.slice(2, 5) : nic.slice(4, 7));
       if (day > 500) day -= 500;
@@ -95,7 +98,30 @@ function EmployeeRegister() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'nic') {
+      setNicError('');
+    }
     setFormData(d => ({ ...d, [name]: value, ...(name === 'bankName' ? { bankBranch: '' } : {}) }));
+  };
+
+  const handleNicBlur = async () => {
+    const { nic } = formData;
+    if (!nic || !nicPattern.test(nic)) return;
+    try {
+      const res = await axios.get(`http://localhost:3006/api/auth/check-nic/${nic}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.exists) {
+        setNicError('NIC already exists. Please use a different NIC.');
+      } else {
+        setNicError('');
+      }
+    } catch (err) {
+      if (err.response?.status !== 404) {
+        console.error('Error checking NIC:', err);
+      }
+      setNicError('');
+    }
   };
 
   const handleImage = async (e) => {
@@ -133,8 +159,8 @@ function EmployeeRegister() {
     const form = e.currentTarget;
     setValidated(true);
 
-    if (form.checkValidity() === false || !image || !imageUrl) {
-      Swal.fire('Error', 'Please complete all required fields and upload a valid image', 'error');
+    if (form.checkValidity() === false || !image || !imageUrl || nicError) {
+      Swal.fire('Error', 'Please complete all required fields, upload a valid image, and ensure NIC is unique', 'error');
       return;
     }
 
@@ -199,11 +225,12 @@ function EmployeeRegister() {
                     name="nic"
                     value={formData.nic}
                     onChange={handleChange}
-                    pattern="^(?:\d{9}[vVxX]|\d{12})$"
-                    isInvalid={validated && !/^(?:\d{9}[vVxX]|\d{12})$/.test(formData.nic)}
+                    onBlur={handleNicBlur}
+                    pattern={nicPattern.source}
+                    isInvalid={!!nicError || (validated && !nicPattern.test(formData.nic))}
                   />
                   <Form.Control.Feedback type="invalid">
-                    Please enter a valid NIC (9 digits + V/X or 12 digits).
+                    {nicError || (validated && !nicPattern.test(formData.nic) ? 'Please enter a valid NIC (9 digits + V/X or 12 digits).' : '')}
                   </Form.Control.Feedback>
                 </Form.Group>
                 <Row>

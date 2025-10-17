@@ -39,6 +39,7 @@ import AttendanceReport from "./Components/AttendenceReport.js";
 import AdvancePaymentForEmp from "./Components/AdvancePaymentForEmp.js";
 import UserLeavesStatus from "./Components/UserLeavesStatus.js";
 import HalfDayForEmp from "./Components/HalfDayForEmp.js";
+import ManualAttendence from "./Components/ManualAttendence.js";
 
 import { jwtDecode } from "jwt-decode";
 
@@ -111,6 +112,7 @@ function App() {
         <Route path="/AdvancePaymentForEmp" element={<AdvancePaymentForEmp />} />
         <Route path="/UserLeavesStatus" element={<UserLeavesStatus />} />
         <Route path="/HalfDayForEmp" element={<HalfDayForEmp />} />
+        <Route path="/ManualAttendence" element={<ManualAttendence />} />
         
       </Routes>
     </Router>
